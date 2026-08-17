@@ -1,0 +1,2 @@
+import { PolicyPage } from "../../components/PolicyPage";
+export default function GuidelinesPage() { return <PolicyPage kicker="COMMUNITY GUIDELINES" title="開放創作，不等於沒有邊界。" intro="OpenGames 是全年齡主平台。我們鼓勵實驗，但不犧牲玩家安全、創作者權利或社群信任。" sections={[{ title: "你必須擁有發布權利", body: "只上傳你創作、獲得授權或依法可以散布的內容。不得冒用他人品牌、資產、音樂與角色。" },{ title: "全年齡內容", body: "禁止成人色情、仇恨、騷擾、賭博、詐騙、非法交易及刻意造成傷害的內容。成熟題材也必須適合一般公開瀏覽。" },{ title: "禁止惡意程式", body: "不得追蹤玩家、挖礦、竊取資料、繞過沙箱、誘導下載或隱藏外部執行檔。通過自動檢查不代表平台為程式安全背書。" },{ title: "檢舉與處置", body: "檢舉會進入管理員佇列；單一檢舉不會自動下架。確認違規後可隱藏作品、停權帳號並保留必要稽核紀錄。" }]} />; }

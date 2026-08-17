@@ -1,0 +1,2 @@
+import { PolicyPage } from "../../components/PolicyPage";
+export default function TermsPage() { return <PolicyPage kicker="TERMS" title="作品屬於創作者，平台保持開放。" intro="OpenGames 平台程式採 MIT 授權；每款遊戲由創作者自行選擇授權、原始碼與下載方式。" sections={[{ title: "平台許可", body: "上傳即代表你授予 OpenGames 儲存、執行、展示及提供你已啟用下載內容所必要的非專屬許可。作品著作權仍屬於你。" },{ title: "版本與移除", body: "創作者可發布新版本、關閉下載或下架作品。平台也可因安全、法律或社群規範移除內容。" },{ title: "不保證無錯誤", body: "社群遊戲由第三方提供。平台會隔離執行並進行基礎檢查，但不能保證每款作品完全沒有錯誤或惡意邏輯。" },{ title: "責任與變更", body: "正式營運者應依所在地法律補充責任限制、爭議處理、聯絡資訊與政策更新通知。" }]} />; }

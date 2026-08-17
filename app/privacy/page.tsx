@@ -1,0 +1,2 @@
+import { PolicyPage } from "../../components/PolicyPage";
+export default function PrivacyPage() { return <PolicyPage kicker="PRIVACY" title="只收集平台真正需要的資料。" intro="帳號驗證由 Supabase Auth 處理；遊戲在獨立沙箱中執行，不能讀取你的 OpenGames 工作階段。" sections={[{ title: "帳號資料", body: "我們保存驗證後的 Email、公開暱稱、帳號角色與作品歸屬。密碼由身分服務處理，OpenGames 不直接保存明文密碼。" },{ title: "遊玩資料", body: "首版只彙總作品的遊玩次數與日期，不建立跨網站廣告追蹤檔案。遊戲本身預設不能連線到外部服務。" },{ title: "上傳內容", body: "ZIP、解壓後遊戲檔案與作品圖片存放在平台物件儲存空間；授權公開的檔案可被任何人存取。" },{ title: "你的選擇", body: "你可以要求匯出或刪除帳號與作品。涉及安全、侵權或稽核的最小紀錄可能依法保留。" }]} />; }
