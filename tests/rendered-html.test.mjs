@@ -31,7 +31,7 @@ test("renders the premium public home page and absolute social metadata", async 
   assert.match(html, /<title>OpenGames — 好遊戲，不該被埋沒<\/title>/);
   assert.match(html, /好遊戲/);
   assert.match(html, /THE OPEN ARCADE/);
-  assert.match(html, /http:\/\/localhost:3000\/og\.png/);
+  assert.match(html, /(?:http:\/\/localhost:3000|https:\/\/opengames-arcade\.momognchou\.chatgpt\.site)\/og\.png/);
   assert.match(html, /aria-label="行動版導覽"/);
   assert.doesNotMatch(html, /opengames\.com/i);
   assert.doesNotMatch(html, /codex-preview|SkeletonPreview|site-creator-vinext-starter/i);
