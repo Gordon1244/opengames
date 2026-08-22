@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SiteHeader, SiteFooter } from "../components/SiteHeader";
 
 const games = [
   { title: "Neon Tideline", creator: "Morrow Studio", meta: "節奏冒險 · 6.2k 次遊玩", art: "tide", badge: "本週精選", slug: "neon-tideline" },
@@ -9,11 +10,7 @@ const games = [
 export default function Home() {
   return (
     <main>
-      <header className="site-header">
-        <a className="brand" href="#top" aria-label="OpenGames 首頁"><span className="brand-mark">O</span><span>OpenGames</span></a>
-        <nav className="main-nav" aria-label="主要導覽"><Link href="/games">探索遊戲</Link><Link href="/upload">創作者</Link><Link href="/guidelines">關於開源</Link></nav>
-        <div className="header-actions"><Link className="language-button" href="/?lang=en" aria-label="切換語言">中 / EN</Link><Link className="sign-in" href="/login">登入</Link></div>
-      </header>
+      <SiteHeader />
 
       <section className="hero" id="top">
         <div className="hero-copy">
@@ -27,7 +24,7 @@ export default function Home() {
         <div className="hero-stage" aria-label="遊戲預覽">
           <div className="stage-halo" />
           <div className="play-window">
-            <div className="window-bar"><span className="window-dots"><i /><i /><i /></span><span>PLAY.OPENGAMES.COM</span><span className="live-label"><i /> LIVE</span></div>
+            <div className="window-bar"><span className="window-dots"><i /><i /><i /></span><span>PLAY IN BROWSER</span><span className="live-label"><i /> LIVE</span></div>
             <div className="game-scene">
               <div className="scene-grid" /><div className="scene-moon" /><div className="scene-ship">▲</div>
               <div className="scene-copy"><span>COMMUNITY PICK / 001</span><strong>VOID<br />RUNNER</strong></div>
@@ -56,7 +53,7 @@ export default function Home() {
         <div className="creator-copy"><p>保有作品權利，自由決定授權與下載方式。打包 HTML5 遊戲、通過安全檢查，幾分鐘內分享給全世界。</p><Link className="light-button" href="/upload">成為首批創作者 <span>↗</span></Link></div>
       </section>
 
-      <footer id="about"><a className="brand footer-brand" href="#top"><span className="brand-mark">O</span><span>OpenGames</span></a><p>Play freely. Build openly. © 2026 OpenGames.</p><div><a href="https://github.com/Gordon1244/opengames">GitHub</a><Link href="/guidelines">社群規範</Link><Link href="/privacy">隱私</Link></div></footer>
+      <SiteFooter />
     </main>
   );
 }

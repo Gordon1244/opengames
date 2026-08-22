@@ -31,7 +31,9 @@ test("renders the premium public home page and absolute social metadata", async 
   assert.match(html, /<title>OpenGames — 好遊戲，不該被埋沒<\/title>/);
   assert.match(html, /好遊戲/);
   assert.match(html, /THE OPEN ARCADE/);
-  assert.match(html, /https:\/\/opengames\.com\/og\.png/);
+  assert.match(html, /http:\/\/localhost:3000\/og\.png/);
+  assert.match(html, /aria-label="行動版導覽"/);
+  assert.doesNotMatch(html, /opengames\.com/i);
   assert.doesNotMatch(html, /codex-preview|SkeletonPreview|site-creator-vinext-starter/i);
 });
 
@@ -61,7 +63,9 @@ test("keeps upload and player safety controls in source", async () => {
   assert.match(upload, /buffer\.byteLength > 50 \* 1024 \* 1024/);
   assert.match(upload, /expandedBytes > 250 \* 1024 \* 1024/);
   assert.match(upload, /normalized\.includes\("\.\.\/"\)/);
-  assert.match(player, /connect-src 'none'/);
+  assert.match(player, /sandbox allow-scripts allow-pointer-lock/);
+  assert.match(player, /connect-src 'self' data: blob:/);
   assert.match(player, /frame-ancestors 'self'/);
+  assert.match(player, /g\.current_release_id = r\.id/);
   await assert.rejects(access(new URL("../app/_sites-preview/SkeletonPreview.tsx", import.meta.url)));
 });

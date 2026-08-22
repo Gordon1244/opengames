@@ -22,7 +22,7 @@ export async function getUploadedGames() {
   const { DB } = await getPlatformEnv();
   if (!DB) return [];
   await ensureCoreTables(DB);
-  const result = await DB.prepare(`SELECT g.id, g.slug, g.title_zh, g.title_en, g.description_zh, g.category, g.tags, g.license, g.source_url, g.allow_download, g.current_release_id, p.display_name, p.handle FROM games g JOIN profiles p ON p.id = g.creator_id WHERE g.status = 'published' ORDER BY g.created_at DESC LIMIT 60`).all<Record<string, unknown>>();
+  const result = await DB.prepare(`SELECT g.id, g.slug, g.title_zh, g.title_en, g.description_zh, g.category, g.tags, g.license, g.source_url, g.allow_download, g.current_release_id, p.display_name, p.handle, COALESCE((SELECT SUM(pm.plays) FROM play_metrics pm WHERE pm.game_id = g.id), 0) AS plays FROM games g JOIN profiles p ON p.id = g.creator_id WHERE g.status = 'published' ORDER BY g.created_at DESC LIMIT 60`).all<Record<string, unknown>>();
   return result.results ?? [];
 }
 
@@ -30,14 +30,14 @@ export async function getUploadedGame(slug: string) {
   const { DB } = await getPlatformEnv();
   if (!DB) return null;
   await ensureCoreTables(DB);
-  return DB.prepare(`SELECT g.*, p.display_name, p.handle, r.version, r.entry_path FROM games g JOIN profiles p ON p.id = g.creator_id LEFT JOIN game_releases r ON r.id = g.current_release_id WHERE g.slug = ? AND g.status = 'published' LIMIT 1`).bind(slug).first<Record<string, unknown>>();
+  return DB.prepare(`SELECT g.*, p.display_name, p.handle, r.version, r.entry_path, COALESCE((SELECT SUM(pm.plays) FROM play_metrics pm WHERE pm.game_id = g.id), 0) AS plays FROM games g JOIN profiles p ON p.id = g.creator_id LEFT JOIN game_releases r ON r.id = g.current_release_id WHERE g.slug = ? AND g.status = 'published' LIMIT 1`).bind(slug).first<Record<string, unknown>>();
 }
 
 export async function getCreatorGames(creatorId: string) {
   const { DB } = await getPlatformEnv();
   if (!DB) return [];
   await ensureCoreTables(DB);
-  const result = await DB.prepare(`SELECT g.id, g.slug, g.title_zh, g.status, g.updated_at, r.version, r.status AS release_status FROM games g LEFT JOIN game_releases r ON r.id = g.current_release_id WHERE g.creator_id = ? ORDER BY g.updated_at DESC`).bind(creatorId).all<Record<string, unknown>>();
+  const result = await DB.prepare(`SELECT g.id, g.slug, g.title_zh, g.status, g.allow_download, g.updated_at, r.version, r.status AS release_status, COALESCE((SELECT SUM(pm.plays) FROM play_metrics pm WHERE pm.game_id = g.id), 0) AS plays FROM games g LEFT JOIN game_releases r ON r.id = g.current_release_id WHERE g.creator_id = ? ORDER BY g.updated_at DESC`).bind(creatorId).all<Record<string, unknown>>();
   return result.results ?? [];
 }
 

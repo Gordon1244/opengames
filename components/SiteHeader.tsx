@@ -7,7 +7,11 @@ export async function SiteHeader() {
     <header className="site-header inner-header">
       <Link className="brand" href="/" aria-label="OpenGames 首頁"><span className="brand-mark">O</span><span>OpenGames</span></Link>
       <nav className="main-nav" aria-label="主要導覽"><Link href="/games">探索遊戲</Link><Link href="/upload">上傳作品</Link><Link href="/guidelines">社群規範</Link></nav>
-      <div className="header-actions"><Link className="language-button" href="/?lang=en">中 / EN</Link>{user ? <Link className="sign-in" href="/dashboard">控制台</Link> : <Link className="sign-in" href="/login">登入</Link>}</div>
+      <div className="header-actions">{user ? <Link className="sign-in" href="/dashboard">控制台</Link> : <Link className="sign-in" href="/login">登入</Link>}</div>
+      <details className="mobile-menu">
+        <summary aria-label="開啟網站選單">選單</summary>
+        <nav aria-label="行動版導覽"><Link href="/games">探索遊戲</Link><Link href="/upload">上傳作品</Link><Link href="/guidelines">社群規範</Link>{user ? <Link href="/dashboard">作品控制台</Link> : <Link href="/login">登入／註冊</Link>}</nav>
+      </details>
     </header>
   );
 }
