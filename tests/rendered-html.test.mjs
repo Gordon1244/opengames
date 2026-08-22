@@ -56,9 +56,11 @@ test("renders policy and authentication surfaces", async () => {
 });
 
 test("keeps upload and player safety controls in source", async () => {
-  const [upload, player] = await Promise.all([
+  const [upload, player, home, header] = await Promise.all([
     readFile(new URL("../lib/upload.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/play/[releaseId]/[...path]/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../components/SiteHeader.tsx", import.meta.url), "utf8"),
   ]);
   assert.match(upload, /buffer\.byteLength > 50 \* 1024 \* 1024/);
   assert.match(upload, /expandedBytes > 250 \* 1024 \* 1024/);
@@ -67,5 +69,7 @@ test("keeps upload and player safety controls in source", async () => {
   assert.match(player, /connect-src 'self' data: blob:/);
   assert.match(player, /frame-ancestors 'self'/);
   assert.match(player, /g\.current_release_id = r\.id/);
+  assert.doesNotMatch(home + header, /next\/link/);
+  assert.match(home, /<a className="primary-button" href="\/games">/);
   await assert.rejects(access(new URL("../app/_sites-preview/SkeletonPreview.tsx", import.meta.url)));
 });

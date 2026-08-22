@@ -1,4 +1,4 @@
-import Link from "next/link";
+/* eslint-disable @next/next/no-html-link-for-pages -- Vinext client navigation currently throws at runtime; use reliable document navigation. */
 import { SiteHeader, SiteFooter } from "../components/SiteHeader";
 
 const games = [
@@ -17,7 +17,7 @@ export default function Home() {
           <p className="eyebrow"><span /> THE OPEN ARCADE</p>
           <h1>好遊戲，<br /><em>不該被埋沒。</em></h1>
           <p className="hero-lead">一個由玩家與創作者共同打造的開源遊戲平台。上傳你的作品，讓全世界在瀏覽器裡直接玩。</p>
-          <div className="hero-actions"><Link className="primary-button" href="/games">開始探索 <span>↗</span></Link><Link className="secondary-button" href="/upload">上傳你的遊戲</Link></div>
+          <div className="hero-actions"><a className="primary-button" href="/games">開始探索 <span>↗</span></a><a className="secondary-button" href="/upload">上傳你的遊戲</a></div>
           <div className="hero-proof" aria-label="平台特色"><div><strong>100%</strong><span>瀏覽器直接玩</span></div><div><strong>OPEN</strong><span>MIT 開源平台</span></div><div><strong>FAIR</strong><span>創作者保有權利</span></div></div>
         </div>
 
@@ -28,7 +28,7 @@ export default function Home() {
             <div className="game-scene">
               <div className="scene-grid" /><div className="scene-moon" /><div className="scene-ship">▲</div>
               <div className="scene-copy"><span>COMMUNITY PICK / 001</span><strong>VOID<br />RUNNER</strong></div>
-              <Link href="/games/void-runner" className="play-button" aria-label="遊玩 Void Runner"><span>▶</span></Link>
+              <a href="/games/void-runner" className="play-button" aria-label="遊玩 Void Runner"><span>▶</span></a>
             </div>
             <div className="window-footer"><div><strong>VOID RUNNER</strong><span>by Kurobyte</span></div><div className="window-tags"><span>動作</span><span>WebGL</span></div></div>
           </div>
@@ -40,17 +40,17 @@ export default function Home() {
         <div className="section-heading"><div><p className="eyebrow"><span /> DISCOVER SOMETHING NEW</p><h2>現在，玩點不一樣的。</h2></div><a href="#all-games">查看所有遊戲 <span>→</span></a></div>
         <div className="game-grid" id="all-games">
           {games.map((game, index) => (
-            <Link className="game-card" key={game.title} href={`/games/${game.slug}`}>
+            <a className="game-card" key={game.title} href={`/games/${game.slug}`}>
               <div className={`game-art ${game.art}`}><span className="card-index">0{index + 1}</span><span className="card-badge">{game.badge}</span><div className="art-object" /><span className="card-play" aria-label={`遊玩 ${game.title}`}>▶</span></div>
               <div className="game-info"><div><h3>{game.title}</h3><p>by {game.creator}</p></div><span>{game.meta}</span></div>
-            </Link>
+            </a>
           ))}
         </div>
       </section>
 
       <section className="creator-callout" id="creators">
         <div><p className="eyebrow light"><span /> BUILT IN THE OPEN</p><h2>你做遊戲。<br />我們讓它被看見。</h2></div>
-        <div className="creator-copy"><p>保有作品權利，自由決定授權與下載方式。打包 HTML5 遊戲、通過安全檢查，幾分鐘內分享給全世界。</p><Link className="light-button" href="/upload">成為首批創作者 <span>↗</span></Link></div>
+        <div className="creator-copy"><p>保有作品權利，自由決定授權與下載方式。打包 HTML5 遊戲、通過安全檢查，幾分鐘內分享給全世界。</p><a className="light-button" href="/upload">成為首批創作者 <span>↗</span></a></div>
       </section>
 
       <SiteFooter />
