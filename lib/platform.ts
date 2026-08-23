@@ -17,9 +17,11 @@ export async function ensureCoreTables(db: D1Database) {
     db.prepare(`CREATE TABLE IF NOT EXISTS reports (id TEXT PRIMARY KEY, game_id TEXT NOT NULL, reporter_id TEXT, reason TEXT NOT NULL, details TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'open', created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`),
     db.prepare(`CREATE TABLE IF NOT EXISTS play_metrics (game_id TEXT NOT NULL, day TEXT NOT NULL, plays INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (game_id, day))`),
     db.prepare(`CREATE TABLE IF NOT EXISTS game_ratings (game_id TEXT NOT NULL, user_id TEXT NOT NULL, rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5), created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (game_id, user_id))`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS login_notifications (session_id TEXT PRIMARY KEY, user_id TEXT NOT NULL, method TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'sending', created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, sent_at TEXT)`),
     db.prepare(`CREATE INDEX IF NOT EXISTS idx_games_status_created ON games(status, created_at)`),
     db.prepare(`CREATE INDEX IF NOT EXISTS idx_games_creator ON games(creator_id)`),
     db.prepare(`CREATE INDEX IF NOT EXISTS idx_reports_status_created ON reports(status, created_at)`),
+    db.prepare(`CREATE INDEX IF NOT EXISTS idx_login_notifications_user_created ON login_notifications(user_id, created_at)`),
   ]);
 }
 

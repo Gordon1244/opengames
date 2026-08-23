@@ -121,8 +121,22 @@ test("rejects cross-site rating changes before reading account or database state
   assert.match(await response.text(), /無效的評價要求/);
 });
 
-test("keeps upload, player, rating, and account security controls in source", async () => {
-  const [upload, player, home, header, demoGame, auth, security, securityGate, reauthRoute, securityPage, ratingRoute, ratingPanel, platform, privacy, emailTemplate] = await Promise.all([
+test("rejects cross-site login notification requests", async () => {
+  const worker = await loadWorker();
+  const response = await worker.fetch(
+    new Request("https://opengames.test/api/auth/login-notification", {
+      method: "POST",
+      headers: { Origin: "https://attacker.test" },
+    }),
+    env(),
+    { waitUntil() {}, passThroughOnException() {} },
+  );
+  assert.equal(response.status, 403);
+  assert.match(response.headers.get("cache-control") ?? "", /no-store/);
+});
+
+test("keeps upload, player, rating, login notification, and account security controls in source", async () => {
+  const [upload, player, home, header, demoGame, auth, security, securityGate, reauthRoute, securityPage, ratingRoute, ratingPanel, platform, loginForm, callback, loginNotification, privacy, emailTemplate] = await Promise.all([
     readFile(new URL("../lib/upload.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/play/[releaseId]/[...path]/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
@@ -136,6 +150,9 @@ test("keeps upload, player, rating, and account security controls in source", as
     readFile(new URL("../app/api/games/[gameId]/rating/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/games/[slug]/RatingPanel.tsx", import.meta.url), "utf8"),
     readFile(new URL("../lib/platform.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/login/LoginForm.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/auth/callback/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/login-notifications.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/privacy/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../emails/confirm-sign-up.html", import.meta.url), "utf8"),
   ]);
@@ -171,6 +188,20 @@ test("keeps upload, player, rating, and account security controls in source", as
   assert.match(platform, /CHECK \(rating BETWEEN 1 AND 5\)/);
   assert.match(home, /sortRecommendedGames/);
   assert.match(privacy, /帳號識別碼、遊戲與 1 至 5 星評分/);
+  assert.match(security, /auth\.registerPasskey\(\)/);
+  assert.doesNotMatch(security, /金鑰名稱|passkeyName|auth\.passkey\.update/);
+  assert.match(loginForm, /api\/auth\/login-notification/);
+  assert.match(callback, /sendLoginNotification/);
+  assert.match(loginNotification, /INSERT OR IGNORE INTO login_notifications/);
+  assert.match(loginNotification, /claims\.session_id/);
+  assert.match(loginNotification, /CLOUDFLARE_EMAIL_API_TOKEN/);
+  assert.match(loginNotification, /CLOUDFLARE_ACCOUNT_ID/);
+  assert.match(loginNotification, /api\.cloudflare\.com\/client\/v4\/accounts/);
+  assert.match(loginNotification, /LOGIN_ALERT_FROM_EMAIL/);
+  assert.match(loginNotification, /不收集或顯示完整 IP 位址/);
+  assert.doesNotMatch(loginNotification, /cf-connecting-ip|x-forwarded-for|request\.headers\.get\(["'](?:x-real-ip|cf-connecting-ip)/i);
+  assert.doesNotMatch(loginNotification, /console\.(?:log|error)/);
+  assert.match(privacy, /登入安全通知/);
   assert.match(emailTemplate, /OpenGames 開源遊戲平台/);
   assert.match(emailTemplate, /\{\{ \.ConfirmationURL \}\}/);
   await assert.rejects(access(new URL("../app/_sites-preview/SkeletonPreview.tsx", import.meta.url)));

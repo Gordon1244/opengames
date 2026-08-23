@@ -50,3 +50,12 @@ export const gameRatings = sqliteTable("game_ratings", {
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [primaryKey({ columns: [table.gameId, table.userId] }), check("game_ratings_value_check", sql`${table.rating} BETWEEN 1 AND 5`)]);
+
+export const loginNotifications = sqliteTable("login_notifications", {
+  sessionId: text("session_id").primaryKey(),
+  userId: text("user_id").notNull(),
+  method: text("method").notNull(),
+  status: text("status", { enum: ["sending", "sent"] }).notNull().default("sending"),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  sentAt: text("sent_at"),
+}, (table) => [index("idx_login_notifications_user_created").on(table.userId, table.createdAt)]);

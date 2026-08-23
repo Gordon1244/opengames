@@ -8,11 +8,17 @@ export default function LoginForm({ nextPath, locale }: { nextPath: string; loca
   const [mode, setMode] = useState<"login" | "register" | "recover">("login");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  async function sendLoginNotification() {
+    await fetch("/api/auth/login-notification", { method: "POST", credentials: "same-origin" }).catch(() => undefined);
+  }
   async function finishSignIn(supabase: NonNullable<ReturnType<typeof createClient>>) {
     const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-    location.href = data?.nextLevel === "aal2" && data.currentLevel !== "aal2"
-      ? `/account/security?challenge=1&next=${encodeURIComponent(nextPath)}`
-      : nextPath;
+    if (data?.nextLevel === "aal2" && data.currentLevel !== "aal2") {
+      location.href = `/account/security?challenge=1&notify=1&next=${encodeURIComponent(nextPath)}`;
+      return;
+    }
+    await sendLoginNotification();
+    location.href = nextPath;
   }
   async function signInWithPasskey() {
     setBusy(true); setMessage("");

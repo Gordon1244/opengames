@@ -1,4 +1,4 @@
-export const DEFAULT_SITE_ORIGIN = "https://opengames-arcade.momognchou.chatgpt.site";
+export const DEFAULT_SITE_ORIGIN = "https://opengames-arcade.com";
 
 export function getSiteOrigin() {
   const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();

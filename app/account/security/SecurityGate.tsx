@@ -24,7 +24,7 @@ async function verifyWithServer(payload: Record<string, string>, english: boolea
   if (!response.ok) throw new Error(english ? "Verification failed. Try again later." : (result.error || "驗證失敗，請稍後再試。"));
 }
 
-export default function SecurityGate({ locale, userId, challenge, nextPath }: { locale: Locale; userId: string; challenge: boolean; nextPath: string }) {
+export default function SecurityGate({ locale, userId, challenge, notificationPending, nextPath }: { locale: Locale; userId: string; challenge: boolean; notificationPending: boolean; nextPath: string }) {
   const english = locale === "en";
   const [method, setMethod] = useState<Method>(challenge ? "totp" : "password");
   const [totpFactors, setTotpFactors] = useState<TotpFactor[]>([]);
@@ -48,10 +48,13 @@ export default function SecurityGate({ locale, userId, challenge, nextPath }: { 
     return () => window.clearTimeout(task);
   }, [english]);
 
-  function complete() {
+  async function complete() {
     setPassword("");
     setCode("");
-    if (challenge) location.href = nextPath;
+    if (challenge) {
+      if (notificationPending) await fetch("/api/auth/login-notification", { method: "POST", credentials: "same-origin" }).catch(() => undefined);
+      location.href = nextPath;
+    }
     else setVerified(true);
   }
 
@@ -60,7 +63,7 @@ export default function SecurityGate({ locale, userId, challenge, nextPath }: { 
     setBusy(true); setMessage("");
     try {
       await verifyWithServer({ method: "password", password }, english);
-      complete();
+      await complete();
     } catch (error) { setMessage(errorText(error, english)); }
     setBusy(false);
   }
@@ -78,7 +81,7 @@ export default function SecurityGate({ locale, userId, challenge, nextPath }: { 
         throw new Error(english ? "You selected a different account. Sign back in to the original account." : "你選擇了另一個帳號，請重新登入原本帳號。");
       }
       await verifyWithServer({ method: "passkey", accessToken: data.session.access_token }, english);
-      complete();
+      await complete();
     } catch (error) { setMessage(errorText(error, english)); }
     setBusy(false);
   }
@@ -94,7 +97,7 @@ export default function SecurityGate({ locale, userId, challenge, nextPath }: { 
       const { data, error } = await supabase.auth.mfa.challengeAndVerify({ factorId, code });
       if (error) throw error;
       await verifyWithServer({ method: "totp", accessToken: data.access_token }, english);
-      complete();
+      await complete();
     } catch (error) { setMessage(errorText(error, english)); }
     setBusy(false);
   }
