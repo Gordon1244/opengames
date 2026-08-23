@@ -14,10 +14,10 @@ function env() {
   };
 }
 
-async function render(path = "/") {
+async function render(path = "/", headers = {}) {
   const worker = await loadWorker();
   return worker.fetch(
-    new Request(`https://opengames.test${path}`, { headers: { accept: "text/html" } }),
+    new Request(`https://opengames.test${path}`, { headers: { accept: "text/html", ...headers } }),
     env(),
     { waitUntil() {}, passThroughOnException() {} },
   );
@@ -37,6 +37,37 @@ test("renders the premium public home page and absolute social metadata", async 
   assert.match(html, /aria-label="行動版導覽"/);
   assert.doesNotMatch(html, /opengames\.com/i);
   assert.doesNotMatch(html, /codex-preview|SkeletonPreview|site-creator-vinext-starter/i);
+});
+
+test("renders the English interface from the remembered locale cookie", async () => {
+  const [home, games, security] = await Promise.all([
+    render("/", { cookie: "opengames_locale=en" }),
+    render("/games", { cookie: "opengames_locale=en" }),
+    render("/account/security", { cookie: "opengames_locale=en" }),
+  ]);
+  const [homeHtml, gamesHtml, securityHtml] = await Promise.all([home.text(), games.text(), security.text()]);
+  assert.match(homeHtml, /<html lang="en">/);
+  assert.match(homeHtml, /Great games.*deserve to be found/s);
+  assert.match(gamesHtml, /Your next favorite game/);
+  assert.match(securityHtml, /Sign in to OpenGames first/);
+  assert.doesNotMatch(gamesHtml, /下一款喜歡的遊戲/);
+});
+
+test("remembers a validated locale and keeps redirects on this site", async () => {
+  const worker = await loadWorker();
+  const response = await worker.fetch(
+    new Request("https://opengames.test/api/locale", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ locale: "en", next: "https://attacker.test" }),
+    }),
+    env(),
+    { waitUntil() {}, passThroughOnException() {} },
+  );
+  assert.equal(response.status, 303);
+  assert.equal(response.headers.get("location"), "https://opengames.test/");
+  assert.match(response.headers.get("set-cookie") ?? "", /opengames_locale=en/);
+  assert.match(response.headers.get("set-cookie") ?? "", /Max-Age=31536000/i);
 });
 
 test("renders a playable game detail with sandbox isolation", async () => {

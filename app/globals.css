@@ -25,6 +25,11 @@ button, input, textarea, select, option, code, kbd, samp, pre { font-family: var
 .main-nav a, footer a { transition: opacity .2s ease; }
 .main-nav a:hover, footer a:hover { opacity: .55; }
 .header-actions { display: flex; align-items: center; gap: 20px; font-size: 12px; font-weight: 700; }
+.language-switch button { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); border-radius: 999px; background: rgba(255,255,255,.45); padding: 8px 11px; color: var(--ink); font: inherit; font-size: 10px; font-weight: 800; cursor: pointer; }
+.language-switch button:hover { background: white; }
+.language-switch button span { display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--acid); font-size: 9px; }
+.mobile-language-switch { padding: 9px 8px 4px; }
+.mobile-language-switch button { width: 100%; justify-content: center; }
 .sign-in { background: var(--ink); color: white; padding: 11px 18px; border-radius: 999px; }
 .mobile-menu { display: none; position: relative; }
 .mobile-menu summary { list-style: none; cursor: pointer; border: 1px solid var(--line); border-radius: 999px; padding: 10px 14px; font-size: 11px; font-weight: 750; }
