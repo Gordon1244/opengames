@@ -40,3 +40,6 @@ yarn-error.log*
 /.wrangler/
 /outputs/
 /work/
+
+# Licensed webfont: deployed privately, not redistributed in the public source repository.
+/public/fonts/ronde-b-square.otf
