@@ -6,6 +6,7 @@
   font-display: swap;
   font-style: normal;
   font-weight: 400;
+  unicode-range: U+0020-007E, U+00A0-00FF;
 }
 
 :root { --ink: #11130f; --paper: #f2f0e9; --acid: #d6ff45; --mint: #72f3bd; --coral: #ff7058; --line: rgba(17, 19, 15, 0.16); --font-display: "Ronde-B", "Geist", "Noto Sans TC", sans-serif; }
