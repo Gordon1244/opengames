@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>驗證你的 OpenGames 帳號</title></head>
+  <body style="margin:0;background:#eceae2;color:#11130f;font-family:Arial,'Noto Sans TC',sans-serif">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#eceae2;padding:38px 14px">
+      <tr><td align="center">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#ffffff;border:1px solid #d8d6cf;border-radius:16px;overflow:hidden">
+          <tr><td style="padding:24px 30px;background:#11130f;color:#ffffff">
+            <table role="presentation" cellspacing="0" cellpadding="0"><tr><td style="width:38px;height:38px;border-radius:10px;background:#d6ff45;color:#11130f;text-align:center;font-size:20px;font-weight:800">◉</td><td style="padding-left:12px;font-size:21px;font-weight:800;letter-spacing:-.5px">OpenGames</td></tr></table>
+          </td></tr>
+          <tr><td style="padding:48px 38px 18px">
+            <div style="font-size:11px;font-weight:700;letter-spacing:2px;color:#607616">OPEN SOURCE · PLAY FREELY</div>
+            <h1 style="margin:18px 0 16px;font-size:38px;line-height:1.12;letter-spacing:-1.6px">驗證你的 OpenGames 帳號</h1>
+            <p style="margin:0;color:#5d6058;font-size:16px;line-height:1.75">歡迎加入 OpenGames。請確認這是你的 Email，完成後即可建立作品頁、上傳遊戲並管理發布版本。</p>
+          </td></tr>
+          <tr><td style="padding:20px 38px 34px">
+            <a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#11130f;color:#ffffff;text-decoration:none;font-size:15px;font-weight:800;padding:16px 24px;border-radius:8px">驗證並進入 OpenGames&nbsp;&nbsp;<span style="color:#d6ff45">↗</span></a>
+          </td></tr>
+          <tr><td style="padding:0 38px 38px">
+            <div style="border-top:1px solid #e2e0d9;padding-top:22px;color:#777a71;font-size:12px;line-height:1.7">這封信由 <strong style="color:#11130f">OpenGames 開源遊戲平台</strong> 發送。如果你沒有建立帳號，可以忽略此信。為了安全，請勿轉寄驗證連結。</div>
+            <p style="margin:18px 0 0;color:#979990;font-size:11px;line-height:1.6">按鈕無法使用時，請複製此連結到瀏覽器：<br><span style="word-break:break-all">{{ .ConfirmationURL }}</span></p>
+          </td></tr>
+          <tr><td style="padding:18px 30px;background:#f3f1ea;color:#777a71;font-size:11px;text-align:center">本網站：OpenGames · <a href="{{ .SiteURL }}" style="color:#11130f">{{ .SiteURL }}</a></td></tr>
+        </table>
+      </td></tr>
+    </table>
+  </body>
+</html>

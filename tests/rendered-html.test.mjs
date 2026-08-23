@@ -53,15 +53,19 @@ test("renders policy and authentication surfaces", async () => {
   assert.equal(login.status, 200);
   assert.match(await policy.text(), /開放創作，不等於沒有邊界/);
   assert.match(await login.text(), /加入開放的.*遊戲創作社群/s);
+  assert.match(await render("/account/security").then((response) => response.text()), /ACCOUNT SECURITY/);
 });
 
 test("keeps upload and player safety controls in source", async () => {
-  const [upload, player, home, header, demoGame] = await Promise.all([
+  const [upload, player, home, header, demoGame, auth, security, emailTemplate] = await Promise.all([
     readFile(new URL("../lib/upload.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/play/[releaseId]/[...path]/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../components/SiteHeader.tsx", import.meta.url), "utf8"),
     readFile(new URL("../public/demo/void-runner/index.html", import.meta.url), "utf8"),
+    readFile(new URL("../lib/auth.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/account/security/SecuritySettings.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../emails/confirm-sign-up.html", import.meta.url), "utf8"),
   ]);
   assert.match(upload, /buffer\.byteLength > 50 \* 1024 \* 1024/);
   assert.match(upload, /expandedBytes > 250 \* 1024 \* 1024/);
@@ -73,5 +77,11 @@ test("keeps upload and player safety controls in source", async () => {
   assert.doesNotMatch(home + header, /next\/link/);
   assert.match(home, /<a className="primary-button" href="\/games">/);
   assert.match(demoGame, /reset\(\);draw\(0\)/);
+  assert.match(header, /favicon\.svg/);
+  assert.match(auth, /getAuthenticatorAssuranceLevel/);
+  assert.match(security, /registerPasskey/);
+  assert.match(security, /challengeAndVerify/);
+  assert.match(emailTemplate, /OpenGames 開源遊戲平台/);
+  assert.match(emailTemplate, /\{\{ \.ConfirmationURL \}\}/);
   await assert.rejects(access(new URL("../app/_sites-preview/SkeletonPreview.tsx", import.meta.url)));
 });
