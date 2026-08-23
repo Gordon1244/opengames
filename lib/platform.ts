@@ -1,8 +1,12 @@
 type PlatformEnv = { DB?: D1Database; GAMES?: R2Bucket };
 
 export async function getPlatformEnv() {
-  const { env } = await import("cloudflare:workers");
-  return env as unknown as PlatformEnv;
+  try {
+    const { env } = await import("cloudflare:workers");
+    return env as unknown as PlatformEnv;
+  } catch {
+    return {} as PlatformEnv;
+  }
 }
 
 export async function ensureCoreTables(db: D1Database) {
@@ -12,6 +16,7 @@ export async function ensureCoreTables(db: D1Database) {
     db.prepare(`CREATE TABLE IF NOT EXISTS game_releases (id TEXT PRIMARY KEY, game_id TEXT NOT NULL, version TEXT NOT NULL, archive_key TEXT NOT NULL, entry_path TEXT NOT NULL DEFAULT 'index.html', checksum TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'scanning', scan_report TEXT NOT NULL DEFAULT '{}', created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`),
     db.prepare(`CREATE TABLE IF NOT EXISTS reports (id TEXT PRIMARY KEY, game_id TEXT NOT NULL, reporter_id TEXT, reason TEXT NOT NULL, details TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'open', created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`),
     db.prepare(`CREATE TABLE IF NOT EXISTS play_metrics (game_id TEXT NOT NULL, day TEXT NOT NULL, plays INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (game_id, day))`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS game_ratings (game_id TEXT NOT NULL, user_id TEXT NOT NULL, rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5), created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (game_id, user_id))`),
     db.prepare(`CREATE INDEX IF NOT EXISTS idx_games_status_created ON games(status, created_at)`),
     db.prepare(`CREATE INDEX IF NOT EXISTS idx_games_creator ON games(creator_id)`),
     db.prepare(`CREATE INDEX IF NOT EXISTS idx_reports_status_created ON reports(status, created_at)`),
@@ -22,7 +27,7 @@ export async function getUploadedGames() {
   const { DB } = await getPlatformEnv();
   if (!DB) return [];
   await ensureCoreTables(DB);
-  const result = await DB.prepare(`SELECT g.id, g.slug, g.title_zh, g.title_en, g.description_zh, g.category, g.tags, g.license, g.source_url, g.allow_download, g.current_release_id, p.display_name, p.handle, COALESCE((SELECT SUM(pm.plays) FROM play_metrics pm WHERE pm.game_id = g.id), 0) AS plays FROM games g JOIN profiles p ON p.id = g.creator_id WHERE g.status = 'published' ORDER BY g.created_at DESC LIMIT 60`).all<Record<string, unknown>>();
+  const result = await DB.prepare(`SELECT g.id, g.slug, g.title_zh, g.title_en, g.description_zh, g.category, g.tags, g.license, g.source_url, g.allow_download, g.current_release_id, p.display_name, p.handle, COALESCE((SELECT SUM(pm.plays) FROM play_metrics pm WHERE pm.game_id = g.id), 0) AS plays, COALESCE((SELECT ROUND(AVG(gr.rating), 1) FROM game_ratings gr WHERE gr.game_id = g.id), 0) AS rating_average, COALESCE((SELECT COUNT(*) FROM game_ratings gr WHERE gr.game_id = g.id), 0) AS rating_count FROM games g JOIN profiles p ON p.id = g.creator_id WHERE g.status = 'published' ORDER BY g.created_at DESC LIMIT 60`).all<Record<string, unknown>>();
   return result.results ?? [];
 }
 
@@ -30,7 +35,21 @@ export async function getUploadedGame(slug: string) {
   const { DB } = await getPlatformEnv();
   if (!DB) return null;
   await ensureCoreTables(DB);
-  return DB.prepare(`SELECT g.*, p.display_name, p.handle, r.version, r.entry_path, COALESCE((SELECT SUM(pm.plays) FROM play_metrics pm WHERE pm.game_id = g.id), 0) AS plays FROM games g JOIN profiles p ON p.id = g.creator_id LEFT JOIN game_releases r ON r.id = g.current_release_id WHERE g.slug = ? AND g.status = 'published' LIMIT 1`).bind(slug).first<Record<string, unknown>>();
+  return DB.prepare(`SELECT g.*, p.display_name, p.handle, r.version, r.entry_path, COALESCE((SELECT SUM(pm.plays) FROM play_metrics pm WHERE pm.game_id = g.id), 0) AS plays, COALESCE((SELECT ROUND(AVG(gr.rating), 1) FROM game_ratings gr WHERE gr.game_id = g.id), 0) AS rating_average, COALESCE((SELECT COUNT(*) FROM game_ratings gr WHERE gr.game_id = g.id), 0) AS rating_count FROM games g JOIN profiles p ON p.id = g.creator_id LEFT JOIN game_releases r ON r.id = g.current_release_id WHERE g.slug = ? AND g.status = 'published' LIMIT 1`).bind(slug).first<Record<string, unknown>>();
+}
+
+export type RatingSummary = { average: number; count: number };
+
+export async function getRatingSummaries(gameIds: string[]) {
+  const summaries = new Map<string, RatingSummary>();
+  const uniqueIds = [...new Set(gameIds)].filter(Boolean).slice(0, 100);
+  const { DB } = await getPlatformEnv();
+  if (!DB || uniqueIds.length === 0) return summaries;
+  await ensureCoreTables(DB);
+  const placeholders = uniqueIds.map(() => "?").join(",");
+  const result = await DB.prepare(`SELECT game_id, ROUND(AVG(rating), 1) AS rating_average, COUNT(*) AS rating_count FROM game_ratings WHERE game_id IN (${placeholders}) GROUP BY game_id`).bind(...uniqueIds).all<{ game_id: string; rating_average: number; rating_count: number }>();
+  for (const row of result.results ?? []) summaries.set(row.game_id, { average: Number(row.rating_average || 0), count: Number(row.rating_count || 0) });
+  return summaries;
 }
 
 export async function getCreatorGames(creatorId: string) {

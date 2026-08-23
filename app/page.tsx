@@ -1,13 +1,21 @@
 /* eslint-disable @next/next/no-html-link-for-pages -- Vinext client navigation currently throws at runtime; use reliable document navigation. */
 import { SiteHeader, SiteFooter } from "../components/SiteHeader";
+import { GameVisual } from "../components/GameVisual";
+import { demoGames, sortRecommendedGames, uploadedRowToGame } from "../lib/games";
+import { getRatingSummaries, getUploadedGames } from "../lib/platform";
 
-const games = [
-  { title: "Neon Tideline", creator: "Morrow Studio", meta: "節奏冒險 · 6.2k 次遊玩", art: "tide", badge: "本週精選", slug: "neon-tideline" },
-  { title: "Orbital Common", creator: "Ada & Finch", meta: "策略 · 4.8k 次遊玩", art: "orbit", badge: "開放原始碼", slug: "orbital-common" },
-  { title: "Moon Garden", creator: "Soft Relay", meta: "休閒 · 3.9k 次遊玩", art: "garden", badge: "新作", slug: "moon-garden" },
-];
+async function homepageGames() {
+  const [uploaded, demoRatings] = await Promise.all([getUploadedGames(), getRatingSummaries(demoGames.map((game) => game.id))]);
+  const dynamicGames = uploaded.map(uploadedRowToGame).filter((game) => !demoGames.some((demo) => demo.slug === game.slug));
+  const ratedDemos = demoGames.map((game) => { const summary = demoRatings.get(game.id); return { ...game, ratingAverage: summary?.average ?? 0, ratingCount: summary?.count ?? 0 }; });
+  return sortRecommendedGames([...dynamicGames, ...ratedDemos]);
+}
 
-export default function Home() {
+export default async function Home() {
+  const rankedGames = await homepageGames();
+  const featured = rankedGames[0] ?? demoGames[0];
+  const recommendations = rankedGames.slice(1, 4);
+  const featuredRating = featured.ratingCount ? `${featured.ratingAverage.toFixed(1)} / 5` : "尚無評價";
   return (
     <main>
       <SiteHeader />
@@ -25,24 +33,24 @@ export default function Home() {
           <div className="stage-halo" />
           <div className="play-window">
             <div className="window-bar"><span className="window-dots"><i /><i /><i /></span><span>PLAY IN BROWSER</span><span className="live-label"><i /> LIVE</span></div>
-            <div className="game-scene">
-              <div className="scene-grid" /><div className="scene-moon" /><div className="scene-ship">▲</div>
-              <div className="scene-copy"><span>COMMUNITY PICK / 001</span><strong>VOID<br />RUNNER</strong></div>
-              <a href="/games/void-runner" className="play-button" aria-label="遊玩 Void Runner"><span>▶</span></a>
+            <div className="hero-featured-art">
+              <GameVisual art={featured.art} badge="社群推薦" />
+              <div className="scene-copy"><span>COMMUNITY RATING / {featuredRating}</span><strong>{featured.title}</strong></div>
+              <a href={`/games/${featured.slug}`} className="play-button" aria-label={`遊玩 ${featured.title}`}><span>▶</span></a>
             </div>
-            <div className="window-footer"><div><strong>VOID RUNNER</strong><span>by Kurobyte</span></div><div className="window-tags"><span>動作</span><span>WebGL</span></div></div>
+            <div className="window-footer"><div><strong>{featured.title.toUpperCase()}</strong><span>by {featured.creator}</span></div><div className="window-tags"><span>{featured.category}</span><span>★ {featured.ratingCount ? featured.ratingAverage.toFixed(1) : "NEW"}</span></div></div>
           </div>
-          <div className="floating-note note-one"><span>✦</span> 無需安裝</div><div className="floating-note note-two"><span>◎</span> 安全隔離執行</div>
+          <div className="floating-note note-one"><span>★</span> {featuredRating}</div><div className="floating-note note-two"><span>◎</span> {featured.ratingCount ? `${featured.ratingCount} 則玩家評價` : "等待第一則評價"}</div>
         </div>
       </section>
 
       <section className="discover" id="discover">
-        <div className="section-heading"><div><p className="eyebrow"><span /> DISCOVER SOMETHING NEW</p><h2>現在，玩點不一樣的。</h2></div><a href="#all-games">查看所有遊戲 <span>→</span></a></div>
+        <div className="section-heading"><div><p className="eyebrow"><span /> RATED BY THE COMMUNITY</p><h2>社群現在推薦這些遊戲。</h2></div><a href="/games">查看所有遊戲 <span>→</span></a></div>
         <div className="game-grid" id="all-games">
-          {games.map((game, index) => (
+          {recommendations.map((game, index) => (
             <a className="game-card" key={game.title} href={`/games/${game.slug}`}>
-              <div className={`game-art ${game.art}`}><span className="card-index">0{index + 1}</span><span className="card-badge">{game.badge}</span><div className="art-object" /><span className="card-play" aria-label={`遊玩 ${game.title}`}>▶</span></div>
-              <div className="game-info"><div><h3>{game.title}</h3><p>by {game.creator}</p></div><span>{game.meta}</span></div>
+              <GameVisual art={game.art} badge={index === 0 ? "社群高評價" : game.badge} index={index + 2} />
+              <div className="game-info"><div><h3>{game.title}</h3><p>by {game.creator}</p></div><span className="card-rating">★ {game.ratingCount ? game.ratingAverage.toFixed(1) : "新作"}<small>{game.ratingCount ? `${game.ratingCount} 則評價` : `${game.plays.toLocaleString()} 次遊玩`}</small></span></div>
             </a>
           ))}
         </div>

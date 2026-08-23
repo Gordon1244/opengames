@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { check, index, integer, primaryKey, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const profiles = sqliteTable("profiles", {
   id: text("id").primaryKey(),
@@ -42,3 +42,11 @@ export const reports = sqliteTable("reports", {
 export const playMetrics = sqliteTable("play_metrics", {
   gameId: text("game_id").notNull().references(() => games.id), day: text("day").notNull(), plays: integer("plays").notNull().default(0),
 }, (table) => [primaryKey({ columns: [table.gameId, table.day] })]);
+
+export const gameRatings = sqliteTable("game_ratings", {
+  gameId: text("game_id").notNull(),
+  userId: text("user_id").notNull(),
+  rating: integer("rating").notNull(),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [primaryKey({ columns: [table.gameId, table.userId] }), check("game_ratings_value_check", sql`${table.rating} BETWEEN 1 AND 5`)]);

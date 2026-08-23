@@ -31,6 +31,8 @@ test("renders the premium public home page and absolute social metadata", async 
   assert.match(html, /<title>OpenGames — 好遊戲，不該被埋沒<\/title>/);
   assert.match(html, /好遊戲/);
   assert.match(html, /THE OPEN ARCADE/);
+  assert.match(html, /RATED BY THE COMMUNITY/);
+  assert.match(html, /社群現在推薦這些遊戲/);
   assert.match(html, /(?:http:\/\/localhost:3000|https:\/\/opengames-arcade\.momognchou\.chatgpt\.site)\/og\.png/);
   assert.match(html, /aria-label="行動版導覽"/);
   assert.doesNotMatch(html, /opengames\.com/i);
@@ -72,8 +74,24 @@ test("rejects cross-site account reauthentication before reading credentials", a
   assert.match(await response.text(), /無效的驗證要求/);
 });
 
-test("keeps upload, player, and account security controls in source", async () => {
-  const [upload, player, home, header, demoGame, auth, security, securityGate, reauthRoute, securityPage, emailTemplate] = await Promise.all([
+test("rejects cross-site rating changes before reading account or database state", async () => {
+  const worker = await loadWorker();
+  const response = await worker.fetch(
+    new Request("https://opengames.test/api/games/demo-void-runner/rating", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Origin: "https://attacker.test" },
+      body: JSON.stringify({ rating: 5 }),
+    }),
+    env(),
+    { waitUntil() {}, passThroughOnException() {} },
+  );
+  assert.equal(response.status, 403);
+  assert.match(response.headers.get("cache-control") ?? "", /no-store/);
+  assert.match(await response.text(), /無效的評價要求/);
+});
+
+test("keeps upload, player, rating, and account security controls in source", async () => {
+  const [upload, player, home, header, demoGame, auth, security, securityGate, reauthRoute, securityPage, ratingRoute, ratingPanel, platform, privacy, emailTemplate] = await Promise.all([
     readFile(new URL("../lib/upload.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/play/[releaseId]/[...path]/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
@@ -84,6 +102,10 @@ test("keeps upload, player, and account security controls in source", async () =
     readFile(new URL("../app/account/security/SecurityGate.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/api/auth/reauth/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/account/security/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/games/[gameId]/rating/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/games/[slug]/RatingPanel.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../lib/platform.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/privacy/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../emails/confirm-sign-up.html", import.meta.url), "utf8"),
   ]);
   assert.match(upload, /buffer\.byteLength > 50 \* 1024 \* 1024/);
@@ -111,6 +133,13 @@ test("keeps upload, player, and account security controls in source", async () =
   assert.doesNotMatch(reauthRoute, /console\.(?:log|error).*password/);
   assert.match(securityPage, /<SecurityGate/);
   assert.doesNotMatch(securityPage, /<SecuritySettings/);
+  assert.match(ratingRoute, /origin === new URL\(request\.url\)\.origin/);
+  assert.match(ratingRoute, /ON CONFLICT\(game_id,user_id\) DO UPDATE/);
+  assert.match(ratingRoute, /game\.creatorId === user\.id/);
+  assert.match(ratingPanel, /每個帳號只計算一票/);
+  assert.match(platform, /CHECK \(rating BETWEEN 1 AND 5\)/);
+  assert.match(home, /sortRecommendedGames/);
+  assert.match(privacy, /帳號識別碼、遊戲與 1 至 5 星評分/);
   assert.match(emailTemplate, /OpenGames 開源遊戲平台/);
   assert.match(emailTemplate, /\{\{ \.ConfirmationURL \}\}/);
   await assert.rejects(access(new URL("../app/_sites-preview/SkeletonPreview.tsx", import.meta.url)));
