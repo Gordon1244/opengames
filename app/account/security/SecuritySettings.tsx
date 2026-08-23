@@ -12,7 +12,7 @@ function errorText(error: unknown) {
   return error instanceof Error ? error.message : "操作失敗，請稍後再試。";
 }
 
-export default function SecuritySettings({ challenge, nextPath }: { challenge: boolean; nextPath: string }) {
+export default function SecuritySettings() {
   const [totpFactors, setTotpFactors] = useState<TotpFactor[]>([]);
   const [passkeys, setPasskeys] = useState<Passkey[]>([]);
   const [aal, setAal] = useState<string | null>(null);
@@ -67,7 +67,6 @@ export default function SecuritySettings({ challenge, nextPath }: { challenge: b
     else {
       setEnrollment(null); setCode(""); setMessage("二步驟驗證成功，這個工作階段已受到保護。");
       await refresh();
-      if (challenge) location.href = nextPath;
     }
     setBusy(false);
   }
@@ -95,17 +94,15 @@ export default function SecuritySettings({ challenge, nextPath }: { challenge: b
     await refresh(); setBusy(false);
   }
 
-  const needsChallenge = challenge && totpFactors.length > 0 && aal !== "aal2";
   return <section className="security-panel" aria-label="帳號安全設定">
-    {needsChallenge && <div className="security-alert"><strong>還差一步</strong><span>請輸入驗證器代碼，完成本次登入。</span></div>}
     <div className="security-grid">
       <article className="security-card">
         <div className="security-card-head"><span className="security-icon" aria-hidden="true">06</span><div><p>AUTHENTICATOR</p><h2>驗證器二步驟驗證</h2></div><span className={`security-status ${totpFactors.length ? "active" : ""}`}>{totpFactors.length ? "已啟用" : "未設定"}</span></div>
         <p>使用 Google Authenticator、Microsoft Authenticator、1Password 等相容應用程式產生一次性代碼。</p>
         {!totpFactors.length && !enrollment && <button className="security-primary" disabled={busy} onClick={beginTotp}>設定驗證器</button>}
         {enrollment && <div className="totp-setup"><img src={enrollment.qrCode} alt="OpenGames 驗證器 QR Code" /><div><span>無法掃描？手動輸入密鑰</span><code>{enrollment.secret}</code></div></div>}
-        {(enrollment || needsChallenge) && <form className="verify-form" onSubmit={verifyTotp}><label>6 位數驗證碼<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))} /></label><button disabled={busy}>{busy ? "驗證中…" : needsChallenge ? "完成登入" : "啟用二步驟驗證"}</button></form>}
-        {totpFactors.length > 0 && !needsChallenge && <div className="security-confirmed"><span>✓</span><div><strong>驗證器已連結</strong><small>{aal === "aal2" ? "目前工作階段已完成二步驟驗證" : "下次登入時會要求驗證器代碼"}</small></div></div>}
+        {enrollment && <form className="verify-form" onSubmit={verifyTotp}><label>6 位數驗證碼<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))} /></label><button disabled={busy}>{busy ? "驗證中…" : "啟用二步驟驗證"}</button></form>}
+        {totpFactors.length > 0 && <div className="security-confirmed"><span>✓</span><div><strong>驗證器已連結</strong><small>{aal === "aal2" ? "目前工作階段已完成二步驟驗證" : "下次登入時會要求驗證器代碼"}</small></div></div>}
       </article>
       <article className="security-card">
         <div className="security-card-head"><span className="security-icon" aria-hidden="true">◇</span><div><p>PASSKEY</p><h2>密碼金鑰</h2></div><span className={`security-status ${passkeys.length ? "active" : ""}`}>{passkeys.length ? `${passkeys.length} 把` : "可使用"}</span></div>
