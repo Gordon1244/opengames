@@ -278,14 +278,14 @@ footer > div { display: flex; gap: 22px; font-size: 10px; font-weight: 650; }
 .totp-setup span { font-size: 10px; color: rgba(17,19,15,.55); }
 .totp-setup code { overflow-wrap: anywhere; font-size: 12px; }
 .verify-form { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end; }
-.verify-form label, .passkey-add label { display: grid; gap: 7px; font-size: 10px; font-weight: 700; }
-.verify-form input, .passkey-add input { min-width: 0; width: 100%; padding: 12px; border: 1px solid var(--line); background: #faf9f5; border-radius: 4px; outline: 0; }
-.verify-form input:focus, .passkey-add input:focus { border-color: var(--ink); box-shadow: 0 0 0 3px rgba(214,255,69,.5); }
+.verify-form label { display: grid; gap: 7px; font-size: 10px; font-weight: 700; }
+.verify-form input { min-width: 0; width: 100%; padding: 12px; border: 1px solid var(--line); background: #faf9f5; border-radius: 4px; outline: 0; }
+.verify-form input:focus { border-color: var(--ink); box-shadow: 0 0 0 3px rgba(214,255,69,.5); }
 .security-confirmed { display: flex; align-items: center; gap: 12px; margin-top: 24px; padding: 14px; background: #edf7f1; border-radius: 6px; }
 .security-confirmed > span { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: #2f7a50; color: white; }
 .security-confirmed div { display: grid; gap: 3px; }
 .security-confirmed small { color: #416b52; }
-.passkey-add { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 10px; margin-top: 22px; }
+.passkey-add { display: flex; align-items: center; margin-top: 22px; }
 .passkey-list { display: grid; margin-top: 18px; border-top: 1px solid var(--line); }
 .passkey-list > div { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 13px 0; border-bottom: 1px solid var(--line); }
 .passkey-list span { display: grid; gap: 3px; }
@@ -383,6 +383,6 @@ footer > div { display: flex; gap: 22px; font-size: 10px; font-weight: 650; }
   .policy-body section { grid-template-columns: 42px 1fr; }
   .security-card-head { grid-template-columns: auto 1fr; }
   .security-status { grid-column: 2; width: fit-content; }
-  .totp-setup, .verify-form, .passkey-add { grid-template-columns: 1fr; }
+  .totp-setup, .verify-form { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { transition-duration: .01ms !important; } }

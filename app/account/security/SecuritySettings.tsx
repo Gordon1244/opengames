@@ -18,7 +18,6 @@ export default function SecuritySettings() {
   const [aal, setAal] = useState<string | null>(null);
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
   const [code, setCode] = useState("");
-  const [passkeyName, setPasskeyName] = useState("這台裝置");
   const [message, setMessage] = useState("正在檢查帳號安全狀態…");
   const [busy, setBusy] = useState(false);
 
@@ -76,9 +75,8 @@ export default function SecuritySettings() {
     try {
       const supabase = createClient();
       if (!supabase) throw new Error("登入服務尚未設定。");
-      const { data, error } = await supabase.auth.registerPasskey();
+      const { error } = await supabase.auth.registerPasskey();
       if (error) throw error;
-      if (data?.id && passkeyName.trim()) await supabase.auth.passkey.update({ passkeyId: data.id, friendlyName: passkeyName.trim() });
       setMessage("密碼金鑰已加入；下次可直接用裝置解鎖登入。");
       await refresh();
     } catch (error) { setMessage(errorText(error)); }
@@ -107,7 +105,7 @@ export default function SecuritySettings() {
       <article className="security-card">
         <div className="security-card-head"><span className="security-icon" aria-hidden="true">◇</span><div><p>PASSKEY</p><h2>密碼金鑰</h2></div><span className={`security-status ${passkeys.length ? "active" : ""}`}>{passkeys.length ? `${passkeys.length} 把` : "可使用"}</span></div>
         <p>使用 Windows Hello、Touch ID、Face ID 或硬體安全金鑰登入；不需輸入密碼，也更能抵抗釣魚網站。</p>
-        <div className="passkey-add"><label>金鑰名稱<input value={passkeyName} maxLength={120} onChange={(event) => setPasskeyName(event.target.value)} /></label><button className="security-primary" disabled={busy} onClick={addPasskey}>加入這台裝置</button></div>
+        <div className="passkey-add"><button className="security-primary" disabled={busy} onClick={addPasskey}>{busy ? "等待裝置確認…" : "新增密碼金鑰"}</button></div>
         {passkeys.length > 0 && <div className="passkey-list">{passkeys.map((passkey) => <div key={passkey.id}><span><strong>{passkey.friendly_name || "密碼金鑰"}</strong><small>建立於 {new Date(passkey.created_at).toLocaleDateString("zh-TW")}</small></span><button disabled={busy} onClick={() => removePasskey(passkey.id)}>移除</button></div>)}</div>}
         <small className="beta-note">密碼金鑰目前為 Supabase Beta 功能；請至少保留 Email 登入作為備援。</small>
       </article>
