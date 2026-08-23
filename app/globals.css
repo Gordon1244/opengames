@@ -8,7 +8,7 @@
   font-weight: 400;
 }
 
-:root { --ink: #11130f; --paper: #f2f0e9; --acid: #d6ff45; --mint: #72f3bd; --coral: #ff7058; --line: rgba(17, 19, 15, 0.16); --font-display: "Ronde-B", var(--font-geist-sans), "Noto Sans TC", sans-serif; }
+:root { --ink: #11130f; --paper: #f2f0e9; --acid: #d6ff45; --mint: #72f3bd; --coral: #ff7058; --line: rgba(17, 19, 15, 0.16); --font-display: "Ronde-B", "Geist", "Noto Sans TC", sans-serif; }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font-geist-sans), "Noto Sans TC", sans-serif; }
