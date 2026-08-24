@@ -81,15 +81,17 @@ test("renders a playable game detail with sandbox isolation", async () => {
 });
 
 test("renders policy and authentication surfaces", async () => {
-  const [policy, login, converter] = await Promise.all([render("/guidelines"), render("/login"), render("/convert")]);
+  const [policy, login, converter, profile] = await Promise.all([render("/guidelines"), render("/login"), render("/convert"), render("/account/profile")]);
   assert.equal(policy.status, 200);
   assert.equal(login.status, 200);
   assert.equal(converter.status, 200);
+  assert.equal(profile.status, 200);
   assert.match(await policy.text(), /開放創作，不等於沒有邊界/);
   assert.match(await login.text(), /加入開放的.*遊戲創作社群/s);
   assert.match(await converter.text(), /只在本機分析/);
   assert.match(await render("/convert", { cookie: "opengames_locale=en" }).then((response) => response.text()), /LOCAL-ONLY ANALYSIS/);
   assert.match(await render("/account/security").then((response) => response.text()), /ACCOUNT SECURITY/);
+  assert.match(await profile.text(), /請先登入，再編輯創作者資料/);
 });
 
 test("renders bilingual source-export guides with official references and platform limits", async () => {
@@ -317,6 +319,52 @@ test("keeps upload, player, rating, login notification, and account security con
   assert.doesNotMatch(converter, /fetch\(/);
   assert.match(converter, /never runs the program/);
   await assert.rejects(access(new URL("../app/_sites-preview/SkeletonPreview.tsx", import.meta.url)));
+});
+
+test("rejects cross-site creator profile updates before reading account data", async () => {
+  const worker = await loadWorker();
+  const response = await worker.fetch(
+    new Request("https://opengames.test/api/account/profile", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Origin: "https://attacker.test" },
+      body: JSON.stringify({ displayName: "Attacker", handle: "attacker", isPublic: true }),
+    }),
+    env(),
+    { waitUntil() {}, passThroughOnException() {} },
+  );
+  assert.equal(response.status, 403);
+  assert.match(response.headers.get("cache-control") ?? "", /no-store/);
+  assert.match(await response.text(), /無效的更新要求/);
+});
+
+test("keeps creator profiles private-by-design and connected to published games", async () => {
+  const [profileForm, profileRoute, publicPage, platform, uploadRoute, uploadForm, gamePage, privacy] = await Promise.all([
+    readFile(new URL("../app/account/profile/ProfileForm.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/account/profile/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/creators/[handle]/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../lib/platform.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/uploads/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/upload/UploadForm.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/games/[slug]/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/privacy/page.tsx", import.meta.url), "utf8"),
+  ]);
+  assert.match(profileForm, /Email 永遠不會顯示在公開頁面/);
+  assert.match(profileForm, /創作者身分／職稱/);
+  assert.match(profileForm, /技能／專長標籤/);
+  assert.match(profileRoute, /origin === new URL\(request\.url\)\.origin/);
+  assert.match(profileRoute, /UPDATE profiles SET handle=\?, display_name=\?/);
+  assert.doesNotMatch(profileRoute, /UPDATE profiles SET[^\n]*(?:email|role|status)=/);
+  assert.match(publicPage, /getPublicCreatorProfile/);
+  assert.doesNotMatch(publicPage, /profile\.email|user\.email/);
+  assert.match(platform, /is_public = 1/);
+  assert.match(platform, /display_name,is_public,role,status\) VALUES \(\?,\?,\?,\?,0,\?,'active'\)/);
+  assert.match(platform, /ALTER TABLE profiles ADD COLUMN bio/);
+  assert.match(uploadRoute, /ensureCreatorProfile\(user\)/);
+  assert.doesNotMatch(uploadRoute, /creatorName|display_name=excluded\.display_name/);
+  assert.match(uploadForm, /創作者身分會使用你的個人檔案/);
+  assert.match(gamePage, /game\.creatorProfilePublic/);
+  assert.match(gamePage, /\/creators\/\$\{game\.creatorHandle\}/);
+  assert.match(privacy, /完整創作者頁是否公開/);
 });
 
 test("rejects cross-site save and creator-setting changes before account access", async () => {

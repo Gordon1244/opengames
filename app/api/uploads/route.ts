@@ -1,5 +1,5 @@
 import { getCurrentUser } from "../../../lib/auth";
-import { ensureCoreTables, getPlatformEnv } from "../../../lib/platform";
+import { ensureCoreTables, ensureCreatorProfile, getPlatformEnv } from "../../../lib/platform";
 import { scanAndExtractZip, storeRelease } from "../../../lib/upload";
 
 function clean(value: FormDataEntryValue | null, max = 300) { return typeof value === "string" ? value.trim().slice(0, max) : ""; }
@@ -24,11 +24,10 @@ export async function POST(request: Request) {
   const titleEn = clean(form.get("titleEn"), 80);
   const descriptionZh = clean(form.get("descriptionZh"), 1600);
   const descriptionEn = clean(form.get("descriptionEn"), 1600);
-  const creatorName = clean(form.get("creatorName"), 60);
   const category = clean(form.get("category"), 40);
   const license = clean(form.get("license"), 80);
   const version = clean(form.get("version"), 20);
-  if (!(file instanceof File) || !titleZh || !titleEn || !descriptionZh || !descriptionEn || !creatorName) return Response.json({ error: "請完整填寫作品名稱、介紹、創作者與 ZIP 套件。" }, { status: 400 });
+  if (!(file instanceof File) || !titleZh || !titleEn || !descriptionZh || !descriptionEn) return Response.json({ error: "請完整填寫作品名稱、介紹與 ZIP 套件。" }, { status: 400 });
   if (!file.name.toLowerCase().endsWith(".zip")) return Response.json({ error: "只接受 .zip 套件。" }, { status: 400 });
   if (file.size > 50 * 1024 * 1024) return Response.json({ error: "ZIP 超過 50 MiB 上限。" }, { status: 413 });
   if (!categories.has(category) || !licenses.has(license)) return Response.json({ error: "類別或授權選項無效。" }, { status: 400 });
@@ -38,6 +37,8 @@ export async function POST(request: Request) {
   if (!DB || !GAMES) return Response.json({ error: "平台儲存空間尚未就緒。" }, { status: 503 });
   try {
     await ensureCoreTables(DB);
+    const creatorProfile = await ensureCreatorProfile(user);
+    if (!creatorProfile) return Response.json({ error: "請先完成創作者個人檔案。" }, { status: 503 });
     const today = new Date().toISOString().slice(0, 10);
     const count = await DB.prepare(`SELECT COUNT(*) AS count FROM game_releases r JOIN games g ON g.id = r.game_id WHERE g.creator_id = ? AND r.created_at >= ?`).bind(user.id, `${today} 00:00:00`).first<{ count: number }>();
     if ((count?.count ?? 0) >= 3) return Response.json({ error: "今日已達三個版本的安全上限。" }, { status: 429 });
@@ -48,9 +49,7 @@ export async function POST(request: Request) {
     let slug = slugify(titleEn || titleZh);
     if (await DB.prepare(`SELECT 1 FROM games WHERE slug = ?`).bind(slug).first()) slug += `-${gameId.slice(0, 6)}`;
     const sourceUrl = optionalHttpUrl(form.get("sourceUrl"));
-    const handleBase = `creator-${user.id.replace(/[^a-zA-Z0-9]/g, "").slice(0, 12)}`;
     await DB.batch([
-      DB.prepare(`INSERT INTO profiles (id,email,handle,display_name,role,status) VALUES (?,?,?,?,?,'active') ON CONFLICT(id) DO UPDATE SET email=excluded.email, display_name=excluded.display_name, role=excluded.role, updated_at=CURRENT_TIMESTAMP`).bind(user.id, user.email, handleBase, creatorName, user.role),
       DB.prepare(`INSERT INTO games (id,slug,creator_id,title_zh,title_en,description_zh,description_en,category,tags,license,source_url,allow_download,status,current_release_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?, 'hidden',NULL)`).bind(gameId, slug, user.id, titleZh, titleEn, descriptionZh, descriptionEn, category, JSON.stringify(clean(form.get("tags"), 180).split(",").map((item) => item.trim()).filter(Boolean).slice(0, 8)), license, sourceUrl, form.get("allowDownload") === "on" ? 1 : 0),
       DB.prepare(`INSERT INTO game_releases (id,game_id,version,archive_key,entry_path,checksum,status,scan_report) VALUES (?,?,?,?,?,?, 'scanning',?)`).bind(releaseId, gameId, version, `archives/${releaseId}.zip`, "index.html", scan.checksum, JSON.stringify({ fileCount: scan.fileCount, expandedBytes: scan.expandedBytes, runtime: scan.runtime, warnings: scan.warnings, checks: ["path", "type", "size", "entry", "runtime"] })),
     ]);

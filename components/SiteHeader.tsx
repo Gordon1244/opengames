@@ -15,7 +15,7 @@ export async function SiteHeader() {
       <div className="header-actions"><LanguageSwitch locale={locale} />{user ? <a className="sign-in" href={accountHref}>{accountLabel}</a> : <a className="sign-in" href="/login">{copy(locale, "登入", "Sign in")}</a>}</div>
       <details className="mobile-menu">
         <summary aria-label={copy(locale, "開啟網站選單", "Open site menu")}>{copy(locale, "選單", "Menu")}</summary>
-        <nav aria-label={copy(locale, "行動版導覽", "Mobile navigation")}><a href="/games">{copy(locale, "探索遊戲", "Explore")}</a><a href="/upload">{copy(locale, "上傳作品", "Upload")}</a><a href="/convert">{copy(locale, "轉換檢查", "Converter")}</a><a href="/guides">{copy(locale, "匯出教學", "Guides")}</a><a href="/guidelines">{copy(locale, "社群規範", "Guidelines")}</a>{user ? <><a href={accountHref}>{accountLabel}</a><a href="/account/security">{copy(locale, "帳號安全", "Account security")}</a></> : <a href="/login">{copy(locale, "登入／註冊", "Sign in / Register")}</a>}<LanguageSwitch locale={locale} mobile /></nav>
+        <nav aria-label={copy(locale, "行動版導覽", "Mobile navigation")}><a href="/games">{copy(locale, "探索遊戲", "Explore")}</a><a href="/upload">{copy(locale, "上傳作品", "Upload")}</a><a href="/convert">{copy(locale, "轉換檢查", "Converter")}</a><a href="/guides">{copy(locale, "匯出教學", "Guides")}</a><a href="/guidelines">{copy(locale, "社群規範", "Guidelines")}</a>{user ? <><a href={accountHref}>{accountLabel}</a><a href="/account/profile">{copy(locale, "創作者資料", "Creator profile")}</a><a href="/account/security">{copy(locale, "帳號安全", "Account security")}</a></> : <a href="/login">{copy(locale, "登入／註冊", "Sign in / Register")}</a>}<LanguageSwitch locale={locale} mobile /></nav>
       </details>
     </header>
   );
