@@ -136,7 +136,7 @@ test("rejects cross-site login notification requests", async () => {
 });
 
 test("keeps upload, player, rating, login notification, and account security controls in source", async () => {
-  const [upload, player, home, header, demoGame, auth, security, securityGate, reauthRoute, securityPage, ratingRoute, ratingPanel, platform, loginForm, callback, loginNotification, privacy, emailTemplate] = await Promise.all([
+  const [upload, player, home, header, demoGame, auth, security, securityGate, reauthRoute, securityPage, ratingRoute, ratingPanel, platform, loginForm, updatePassword, passwordPolicy, callback, loginNotification, privacy, emailTemplate] = await Promise.all([
     readFile(new URL("../lib/upload.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/play/[releaseId]/[...path]/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
@@ -151,6 +151,8 @@ test("keeps upload, player, rating, login notification, and account security con
     readFile(new URL("../app/games/[slug]/RatingPanel.tsx", import.meta.url), "utf8"),
     readFile(new URL("../lib/platform.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/login/LoginForm.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/account/password/UpdatePasswordForm.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../lib/password-policy.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/auth/callback/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../lib/login-notifications.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/privacy/page.tsx", import.meta.url), "utf8"),
@@ -191,6 +193,13 @@ test("keeps upload, player, rating, login notification, and account security con
   assert.match(security, /auth\.registerPasskey\(\)/);
   assert.doesNotMatch(security, /金鑰名稱|passkeyName|auth\.passkey\.update/);
   assert.match(loginForm, /api\/auth\/login-notification/);
+  assert.match(loginForm, /passwordMeetsPolicy/);
+  assert.match(passwordPolicy, /lowercase/);
+  assert.match(passwordPolicy, /uppercase/);
+  assert.match(passwordPolicy, /digit/);
+  assert.match(updatePassword, /auth\.reauthenticate\(\)/);
+  assert.match(updatePassword, /reauthentication_needed/);
+  assert.match(updatePassword, /updateUser\(\{ password, \.\.\.\(nonce \? \{ nonce \}/);
   assert.match(callback, /sendLoginNotification/);
   assert.match(loginNotification, /INSERT OR IGNORE INTO login_notifications/);
   assert.match(loginNotification, /claims\.session_id/);
