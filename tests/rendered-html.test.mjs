@@ -92,6 +92,27 @@ test("renders policy and authentication surfaces", async () => {
   assert.match(await render("/account/security").then((response) => response.text()), /ACCOUNT SECURITY/);
 });
 
+test("renders bilingual source-export guides with official references and platform limits", async () => {
+  const [zhResponse, enResponse] = await Promise.all([
+    render("/guides"),
+    render("/guides", { cookie: "opengames_locale=en" }),
+  ]);
+  assert.equal(zhResponse.status, 200);
+  assert.equal(enResponse.status, 200);
+  const [zh, en] = await Promise.all([zhResponse.text(), enResponse.text()]);
+  assert.match(zh, /Unity C#.*Web 建置/s);
+  assert.match(zh, /C／C\+\+.*Emscripten WebAssembly/s);
+  assert.match(zh, /Godot 4 的 C# 專案目前不能匯出 Web/);
+  assert.match(zh, /py -m http\.server 8080/);
+  assert.match(zh, /外部 API／多人連線失敗/);
+  assert.match(zh, /docs\.unity3d\.com\/6000\.0/);
+  assert.match(zh, /emscripten\.org\/docs\/getting_started\/Tutorial\.html/);
+  assert.match(zh, /learn\.microsoft\.com\/aspnet\/core\/blazor/);
+  assert.match(zh, /docs\.godotengine\.org\/en\/stable/);
+  assert.match(en, /Bring your game.*to the browser/s);
+  assert.match(en, /Free guide.*no compilation server required/s);
+});
+
 test("rejects cross-site account reauthentication before reading credentials", async () => {
   const worker = await loadWorker();
   const response = await worker.fetch(
@@ -236,7 +257,9 @@ test("keeps upload, player, rating, login notification, and account security con
   assert.match(emailTemplate, /OpenGames 開源遊戲平台/);
   assert.match(emailTemplate, /\{\{ \.ConfirmationURL \}\}/);
   assert.match(header, /href="\/convert"/);
+  assert.match(header, /href="\/guides"/);
   assert.match(uploadForm, /先在本機檢查專案或成品/);
+  assert.match(uploadForm, /查看完整匯出與封裝教學/);
   assert.match(analyzer, /MAX_CENTRAL_DIRECTORY/);
   assert.match(analyzer, /inspectExecutableHeader/);
   assert.doesNotMatch(converter, /fetch\(/);

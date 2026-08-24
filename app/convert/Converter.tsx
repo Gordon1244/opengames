@@ -83,6 +83,16 @@ function verdictCopy(report: ProjectAnalysis) {
   return entries[report.verdict];
 }
 
+function guideHref(kind: ProjectKind) {
+  if (kind === "unity-project") return "/guides#unity";
+  if (kind === "cpp-project") return "/guides#cpp";
+  if (kind === "dotnet-project") return "/guides#dotnet";
+  if (kind === "godot-project") return "/guides#godot";
+  if (kind === "web-build") return "/guides#package";
+  if (kind === "windows-executable" || kind === "android-package" || kind === "android-web-wrapper") return "/guides#choose";
+  return "/guides";
+}
+
 export default function Converter({ locale }: { locale: Locale }) {
   const english = locale === "en";
   const inputRef = useRef<HTMLInputElement>(null);
@@ -161,7 +171,7 @@ export default function Converter({ locale }: { locale: Locale }) {
         <article><span>01 / {english ? "EVIDENCE" : "辨識依據"}</span><h3>{english ? "What was detected" : "偵測到的內容"}</h3>{report.signals.length ? <ul>{report.signals.map((signal) => <li key={signal}>{pick(locale, signalText[signal])}</li>)}</ul> : <p>{english ? "No known project markers were found." : "沒有找到已知的專案標記。"}</p>}{report.examples.length > 0 && <div className="file-examples">{report.examples.map((item) => <code key={item}>{item}</code>)}</div>}</article>
         <article><span>02 / {english ? "NEXT" : "下一步"}</span><h3>{english ? "Recommended actions" : "建議處理方式"}</h3><ol>{report.steps.map((step) => <li key={step}>{pick(locale, stepText[step])}</li>)}</ol></article>
       </div>
-      <div className="report-footer"><button type="button" className="secondary-button" onClick={reset}>{english ? "Check another file" : "檢查另一個檔案"}</button>{report.readyToUpload ? <a className="primary-button" href="/upload">{english ? "Continue to upload" : "前往上傳作品"} <span>↗</span></a> : <a className="text-action" href="/guidelines">{english ? "Read publishing requirements" : "查看發布規範"} →</a>}</div>
+      <div className="report-footer"><button type="button" className="secondary-button" onClick={reset}>{english ? "Check another file" : "檢查另一個檔案"}</button>{report.readyToUpload ? <a className="primary-button" href="/upload">{english ? "Continue to upload" : "前往上傳作品"} <span>↗</span></a> : <a className="text-action" href={guideHref(report.kind)}>{english ? "Open the matching export guide" : "開啟對應的匯出教學"} →</a>}</div>
     </section>}
   </section>;
 }
