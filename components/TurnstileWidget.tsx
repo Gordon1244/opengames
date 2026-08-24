@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import type { Locale } from "../lib/i18n";
+import { useEffect, useRef } from "react";
 
 type TurnstileApi = {
   render: (container: HTMLElement, options: Record<string, unknown>) => string;
@@ -40,21 +39,18 @@ function loadTurnstile() {
 export default function TurnstileWidget({
   siteKey,
   action,
-  locale,
   resetSignal,
   onToken,
 }: {
   siteKey: string;
   action: "login" | "signup" | "password_reset";
-  locale: Locale;
+  locale?: unknown;
   resetSignal: number;
   onToken: (token: string) => void;
 }) {
-  const english = locale === "en";
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
   const onTokenRef = useRef(onToken);
-  const [status, setStatus] = useState<"loading" | "ready" | "verified" | "error">(siteKey ? "loading" : "error");
 
   useEffect(() => { onTokenRef.current = onToken; }, [onToken]);
 
@@ -72,13 +68,12 @@ export default function TurnstileWidget({
         size: "flexible",
         appearance: "always",
         "refresh-expired": "auto",
-        callback: (token: string) => { setStatus("verified"); onTokenRef.current(token); },
-        "expired-callback": () => { setStatus("ready"); onTokenRef.current(""); },
-        "error-callback": () => { setStatus("error"); onTokenRef.current(""); },
+        callback: (token: string) => { onTokenRef.current(token); },
+        "expired-callback": () => { onTokenRef.current(""); },
+        "error-callback": () => { onTokenRef.current(""); },
       });
-      setStatus("ready");
     }).catch(() => {
-      if (!cancelled) { setStatus("error"); onTokenRef.current(""); }
+      if (!cancelled) { onTokenRef.current(""); }
     });
 
     return () => {
@@ -94,14 +89,5 @@ export default function TurnstileWidget({
     onTokenRef.current("");
   }, [resetSignal]);
 
-  const statusText = status === "verified"
-    ? (english ? "Human verification complete." : "真人驗證完成。")
-    : status === "error"
-      ? (english ? "Verification could not load. Refresh the page and try again." : "驗證無法載入，請重新整理頁面後再試。")
-      : (english ? "Complete the security check to continue." : "完成安全檢查後即可繼續。")
-
-  return <div className="turnstile-panel" aria-live="polite">
-    <div className="turnstile-widget" ref={containerRef} />
-    <p className={status === "error" ? "error" : status === "verified" ? "verified" : ""}>{statusText}</p>
-  </div>;
+  return <div className="turnstile-widget" ref={containerRef} />;
 }

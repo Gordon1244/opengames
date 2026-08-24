@@ -200,6 +200,7 @@ test("keeps upload, player, rating, login notification, and account security con
   assert.match(turnstile, /challenges\.cloudflare\.com\/turnstile\/v0\/api\.js\?render=explicit/);
   assert.match(turnstile, /"refresh-expired": "auto"/);
   assert.match(turnstile, /window\.turnstile\.reset/);
+  assert.doesNotMatch(turnstile, /Human verification complete|真人驗證完成|Complete the security check to continue|完成安全檢查後即可繼續/);
   assert.match(loginForm, /passwordMeetsPolicy/);
   assert.match(passwordPolicy, /lowercase/);
   assert.match(passwordPolicy, /uppercase/);
