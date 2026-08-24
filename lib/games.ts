@@ -1,11 +1,15 @@
 import type { Locale } from "./i18n";
 
 export type Game = {
-  id: string; slug: string; title: string; titleEn: string; creator: string; creatorHandle: string;
+  id: string; slug: string; title: string; titleEn: string; creator: string; creatorHandle: string; creatorId?: string;
   description: string; category: string; tags: string[]; plays: number; badge: string; ratingAverage: number; ratingCount: number;
   art: "tide" | "orbit" | "garden" | "void"; license: string; allowDownload: boolean;
   sourceUrl?: string; version: string; playUrl: string; releaseId?: string;
   descriptionEn?: string; categoryEn?: string; tagsEn?: string[]; badgeEn?: string;
+  cloudSavesEnabled?: boolean; multiplayerEnabled?: boolean; multiplayerMaxPlayers?: number;
+  multiplayerModes?: string[];
+  multiplayerRoomPolicy?: "player" | "creator" | "global" | "hybrid"; multiplayerManagedUnlimited?: boolean;
+  supportedLocales?: string[]; defaultLocale?: string;
 };
 
 export const demoGames: Game[] = [
@@ -38,11 +42,34 @@ export function uploadedRowToGame(row: Record<string, unknown>, locale: Locale =
   const releaseId = String(row.current_release_id || "");
   const entryPath = String(row.entry_path || "index.html");
   return {
-    id: String(row.id), slug: String(row.slug), title: String(locale === "en" ? row.title_en || row.title_zh : row.title_zh), titleEn: String(row.title_en), creator: String(row.display_name), creatorHandle: String(row.handle),
+    id: String(row.id), slug: String(row.slug), title: String(locale === "en" ? row.title_en || row.title_zh : row.title_zh), titleEn: String(row.title_en), creator: String(row.display_name), creatorHandle: String(row.handle), creatorId: String(row.creator_id || ""),
     description: String(locale === "en" ? row.description_en || row.description_zh : row.description_zh), category: locale === "en" ? categoryEnglish(String(row.category)) : String(row.category), tags: parseTags(row.tags), plays: Number(row.plays || 0), badge: locale === "en" ? "Community release" : "社群新作", art: "void",
     license: String(row.license), allowDownload: Boolean(row.allow_download), sourceUrl: row.source_url ? String(row.source_url) : undefined, version: String(row.version || "1.0.0"),
     releaseId: releaseId || undefined, playUrl: `/api/play/${releaseId}/${entryPath}`, ratingAverage: Number(row.rating_average || 0), ratingCount: Number(row.rating_count || 0),
+    cloudSavesEnabled: Boolean(row.cloud_saves_enabled), multiplayerEnabled: Boolean(row.multiplayer_enabled), multiplayerMaxPlayers: Math.min(8, Math.max(2, Number(row.multiplayer_max_players || 4))),
+    multiplayerModes: parseMultiplayerModes(row.multiplayer_modes),
+    multiplayerRoomPolicy: (["player", "creator", "global", "hybrid"].includes(String(row.multiplayer_room_policy)) ? String(row.multiplayer_room_policy) : "player") as Game["multiplayerRoomPolicy"], multiplayerManagedUnlimited: Boolean(row.multiplayer_managed_unlimited),
+    supportedLocales: parseSupportedLocales(row.supported_locales), defaultLocale: String(row.default_locale || "zh-Hant"),
   };
+}
+
+export function parseSupportedLocales(value: unknown): string[] {
+  try {
+    const parsed = typeof value === "string" ? JSON.parse(value) : value;
+    if (!Array.isArray(parsed)) return ["zh-Hant"];
+    const locales = parsed.filter((item): item is string => typeof item === "string" && /^[a-z]{2,3}(?:-[A-Za-z]{2,8}){0,2}$/.test(item)).slice(0, 8);
+    return locales.length ? [...new Set(locales)] : ["zh-Hant"];
+  } catch { return ["zh-Hant"]; }
+}
+
+export function parseMultiplayerModes(value: unknown): string[] {
+  const allowed = new Set(["shared", "co-op", "versus", "teams"]);
+  try {
+    const parsed = typeof value === "string" ? JSON.parse(value) : value;
+    if (!Array.isArray(parsed)) return ["shared"];
+    const modes = parsed.filter((item): item is string => typeof item === "string" && allowed.has(item));
+    return modes.length ? [...new Set(modes)] : ["shared"];
+  } catch { return ["shared"]; }
 }
 
 export function categoryEnglish(category: string) {

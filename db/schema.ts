@@ -20,6 +20,14 @@ export const games = sqliteTable("games", {
   category: text("category").notNull(), tags: text("tags").notNull().default("[]"), coverKey: text("cover_key"),
   license: text("license").notNull().default("All rights reserved"), sourceUrl: text("source_url"),
   allowDownload: integer("allow_download", { mode: "boolean" }).notNull().default(false),
+  cloudSavesEnabled: integer("cloud_saves_enabled", { mode: "boolean" }).notNull().default(false),
+  multiplayerEnabled: integer("multiplayer_enabled", { mode: "boolean" }).notNull().default(false),
+  multiplayerMaxPlayers: integer("multiplayer_max_players").notNull().default(4),
+  multiplayerModes: text("multiplayer_modes").notNull().default('["shared"]'),
+  multiplayerRoomPolicy: text("multiplayer_room_policy", { enum: ["player", "creator", "global", "hybrid"] }).notNull().default("player"),
+  multiplayerManagedUnlimited: integer("multiplayer_managed_unlimited", { mode: "boolean" }).notNull().default(false),
+  supportedLocales: text("supported_locales").notNull().default('["zh-Hant"]'),
+  defaultLocale: text("default_locale").notNull().default("zh-Hant"),
   status: text("status", { enum: ["published", "hidden", "removed"] }).notNull().default("published"),
   currentReleaseId: text("current_release_id"),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`), updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
@@ -59,3 +67,13 @@ export const loginNotifications = sqliteTable("login_notifications", {
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   sentAt: text("sent_at"),
 }, (table) => [index("idx_login_notifications_user_created").on(table.userId, table.createdAt)]);
+
+export const gameSaves = sqliteTable("game_saves", {
+  gameId: text("game_id").notNull(),
+  userId: text("user_id").notNull(),
+  slot: text("slot").notNull(),
+  data: text("data").notNull(),
+  version: integer("version").notNull().default(1),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [primaryKey({ columns: [table.gameId, table.userId, table.slot] }), index("idx_game_saves_user_updated").on(table.userId, table.updatedAt)]);

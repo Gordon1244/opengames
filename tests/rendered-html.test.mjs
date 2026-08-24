@@ -113,6 +113,43 @@ test("renders bilingual source-export guides with official references and platfo
   assert.match(en, /Free guide.*no compilation server required/s);
 });
 
+test("renders the bilingual account saves and multiplayer SDK guide", async () => {
+  const [zhResponse, enResponse] = await Promise.all([
+    render("/guides/platform-services"),
+    render("/guides/platform-services", { cookie: "opengames_locale=en" }),
+  ]);
+  assert.equal(zhResponse.status, 200);
+  assert.equal(enResponse.status, 200);
+  const [zh, en] = await Promise.all([zhResponse.text(), enResponse.text()]);
+  assert.match(zh, /把帳號服務.*接進你的遊戲/s);
+  assert.match(zh, /OpenGames\.saves\.write/);
+  assert.match(zh, /全遊戲世界/);
+  assert.match(zh, /無活動 10 分鐘後關閉/);
+  assert.match(en, /Connect account services.*to your game/s);
+  assert.match(en, /OpenGames\.multiplayer\.joinGlobal/);
+});
+
+test("keeps the game bridge, save limits, and Realtime policies in source", async () => {
+  const [bridge, sdk, saves, schema] = await Promise.all([
+    readFile(new URL("../components/GamePlayer.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../public/opengames-sdk.js", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/games/[gameId]/saves/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/multiplayer.sql", import.meta.url), "utf8"),
+  ]);
+  assert.match(bridge, /event\.source !== iframeRef\.current\?\.contentWindow/);
+  assert.match(bridge, /MESSAGE_TOO_LARGE/);
+  assert.match(bridge, /30/);
+  assert.doesNotMatch(bridge, /service_role|user\.email/);
+  assert.match(sdk, /OpenGames/);
+  assert.match(saves, /MAX_SAVE_BYTES = 64 \* 1024/);
+  assert.match(saves, /MAX_SLOTS = 10/);
+  assert.match(saves, /VERSION_CONFLICT/);
+  assert.match(schema, /extensions\.crypt\(p_password/);
+  assert.match(schema, /interval '10 minutes'/);
+  assert.match(schema, /OpenGames room members receive realtime/);
+  assert.match(schema, /revoke all .* from public, anon/);
+});
+
 test("rejects cross-site account reauthentication before reading credentials", async () => {
   const worker = await loadWorker();
   const response = await worker.fetch(
@@ -265,4 +302,17 @@ test("keeps upload, player, rating, login notification, and account security con
   assert.doesNotMatch(converter, /fetch\(/);
   assert.match(converter, /never runs the program/);
   await assert.rejects(access(new URL("../app/_sites-preview/SkeletonPreview.tsx", import.meta.url)));
+});
+
+test("rejects cross-site save and creator-setting changes before account access", async () => {
+  const worker = await loadWorker();
+  const context = { waitUntil() {}, passThroughOnException() {} };
+  const [save, settings] = await Promise.all([
+    worker.fetch(new Request("https://opengames.test/api/games/game-id/saves", { method: "PUT", headers: { "Content-Type": "application/json", Origin: "https://attacker.test" }, body: JSON.stringify({ slot: "default", data: {}, version: 0 }) }), env(), context),
+    worker.fetch(new Request("https://opengames.test/api/creator/games/game-id", { method: "PATCH", headers: { "Content-Type": "application/json", Origin: "https://attacker.test" }, body: JSON.stringify({ cloudSavesEnabled: true }) }), env(), context),
+  ]);
+  assert.equal(save.status, 403);
+  assert.equal(settings.status, 403);
+  assert.match(await save.text(), /Invalid save request/);
+  assert.match(await settings.text(), /Invalid settings request/);
 });

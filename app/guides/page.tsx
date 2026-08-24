@@ -51,7 +51,7 @@ const content = {
         ],
         commandLabel: "最小 Windows 範例（請依專案調整）",
         command: "em++ src/main.cpp -O3 --preload-file assets -o build/index.html\nemrun build/index.html",
-        note: "OpenGames 的遊戲沙箱目前只允許讀取同一款遊戲自己的資源，不允許直接連到外部 API、TCP 或任意多人伺服器。",
+        note: "遊戲仍不能直接連到外部 API、TCP 或任意伺服器；帳號存檔與多人連線請在控制台開啟遊戲服務，並使用 OpenGames SDK 教學。",
         sourceHref: "https://emscripten.org/docs/getting_started/Tutorial.html", sourceLabel: "Emscripten 官方入門教學",
       },
       {
@@ -94,7 +94,7 @@ const content = {
       ["找不到 index.html", "打開 ZIP 後第一層就必須看見 index.html，不能先看到 build、release 或遊戲名稱資料夾。"],
       ["Wasm／素材出現 404", "改用相對路徑，並確認所有建置輸出都在 ZIP 中；注意大小寫。"],
       ["SharedArrayBuffer 錯誤", "目前請建立不依賴跨來源隔離的單執行緒版本。"],
-      ["外部 API／多人連線失敗", "OpenGames 沙箱目前封鎖外部連線。遊戲須可離線或只讀取自身資源。"],
+      ["外部 API／多人連線失敗", "沙箱會封鎖任意外部連線。帳號存檔與多人連線請使用 OpenGames SDK，並保留離線備援。"],
       ["ZIP 太大", "移除 Development Build、除錯符號與未使用素材，壓縮音訊／貼圖，並啟用引擎的 Release 最佳化。"],
       ["我只有 EXE／APK", "無法可靠轉換。向原作者取得原始專案，或由原作者依本頁重新匯出 Web 版本。"],
     ],
@@ -139,7 +139,7 @@ const content = {
         ],
         commandLabel: "Minimal Windows example—adapt it to your project",
         command: "em++ src/main.cpp -O3 --preload-file assets -o build/index.html\nemrun build/index.html",
-        note: "The OpenGames player currently permits only same-game resources. Direct external APIs, TCP, and arbitrary multiplayer servers are blocked.",
+        note: "Direct external APIs, TCP, and arbitrary servers remain blocked. For account saves and multiplayer, enable Game services and use the OpenGames SDK guide.",
         sourceHref: "https://emscripten.org/docs/getting_started/Tutorial.html", sourceLabel: "Official Emscripten tutorial",
       },
       {
@@ -182,7 +182,7 @@ const content = {
       ["index.html not found", "Opening the ZIP must show index.html immediately—not a build, release, or game-name folder."],
       ["Wasm or assets return 404", "Use relative paths, include every build output, and check letter case."],
       ["SharedArrayBuffer error", "Create a single-thread build that doesn't require cross-origin isolation."],
-      ["External API or multiplayer fails", "The OpenGames sandbox currently blocks external connections. Games must work offline or use only their own assets."],
+      ["External API or multiplayer fails", "The sandbox blocks arbitrary external connections. Use the OpenGames SDK for approved account saves and multiplayer, and keep an offline fallback."],
       ["ZIP is too large", "Remove Development Build data, debug symbols, and unused assets; optimize textures and audio."],
       ["I only have an EXE or APK", "It cannot be reliably converted. Obtain the source project or ask the creator to export Web."],
     ],
@@ -212,7 +212,7 @@ export default async function GuidesPage() {
     <section className="page-hero guides-hero"><p className="eyebrow"><span /> CREATOR EXPORT GUIDE</p><h1>{heroFirst}<br />{heroSecond}</h1><p>{page.heroBody}</p><div className="guide-status"><i />{page.status}</div></section>
     <div className="guides-shell">
       <section className="guide-chooser" id="choose"><header><span>00 / START HERE</span><h2>{page.chooseTitle}</h2><p>{page.chooseBody}</p></header><div>{page.chooseCards.map(([badge, title, body, href]) => <a key={badge} href={href}><span>{badge}</span><strong>{title}</strong><p>{body}</p><b>↓</b></a>)}</div></section>
-      <nav className="guide-jump" aria-label={locale === "en" ? "Guide sections" : "教學章節"}>{page.guides.map((guide) => <a key={guide.id} href={`#${guide.id}`}>{guide.badge.split(" / ")[1]}</a>)}<a href="#package">ZIP</a><a href="#troubleshooting">FAQ</a></nav>
+      <nav className="guide-jump" aria-label={locale === "en" ? "Guide sections" : "教學章節"}>{page.guides.map((guide) => <a key={guide.id} href={`#${guide.id}`}>{guide.badge.split(" / ")[1]}</a>)}<a href="#package">ZIP</a><a href="#troubleshooting">FAQ</a><a href="/guides/platform-services">OpenGames SDK</a></nav>
       {page.guides.map((guide) => <GuideBlock guide={guide} key={guide.id} />)}
       <section className="package-guide" id="package"><header><span>05 / PACKAGE</span><h2>{page.packageTitle}</h2><p>{page.packageLead}</p></header><div className="zip-examples"><article className="zip-good"><span>✓ {page.good}</span><pre>{`game.zip\n├─ index.html\n├─ Build/ or _framework/\n├─ game.wasm\n└─ assets/`}</pre></article><article className="zip-bad"><span>× {page.bad}</span><pre>{`game.zip\n└─ MyGameBuild/\n   ├─ index.html\n   └─ Build/`}</pre></article></div><ul className="package-rules">{page.packageRules.map((rule) => <li key={rule}>{rule}</li>)}</ul></section>
       <section className="local-test-guide"><div><span>06 / LOCAL TEST</span><h2>{page.testTitle}</h2></div><ol>{page.testSteps.map((step, index) => <li key={step}><span>{index + 1}</span><p>{step}</p></li>)}</ol><pre><code>py -m http.server 8080</code></pre></section>
