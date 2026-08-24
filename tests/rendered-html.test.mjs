@@ -81,11 +81,14 @@ test("renders a playable game detail with sandbox isolation", async () => {
 });
 
 test("renders policy and authentication surfaces", async () => {
-  const [policy, login] = await Promise.all([render("/guidelines"), render("/login")]);
+  const [policy, login, converter] = await Promise.all([render("/guidelines"), render("/login"), render("/convert")]);
   assert.equal(policy.status, 200);
   assert.equal(login.status, 200);
+  assert.equal(converter.status, 200);
   assert.match(await policy.text(), /開放創作，不等於沒有邊界/);
   assert.match(await login.text(), /加入開放的.*遊戲創作社群/s);
+  assert.match(await converter.text(), /只在本機分析/);
+  assert.match(await render("/convert", { cookie: "opengames_locale=en" }).then((response) => response.text()), /LOCAL-ONLY ANALYSIS/);
   assert.match(await render("/account/security").then((response) => response.text()), /ACCOUNT SECURITY/);
 });
 
@@ -136,7 +139,7 @@ test("rejects cross-site login notification requests", async () => {
 });
 
 test("keeps upload, player, rating, login notification, and account security controls in source", async () => {
-  const [upload, uploadForm, uploadPage, player, home, header, demoGame, auth, security, securityGate, reauthRoute, securityPage, ratingRoute, ratingPanel, platform, loginForm, turnstile, updatePassword, passwordPolicy, callback, loginNotification, privacy, emailTemplate] = await Promise.all([
+  const [upload, uploadForm, uploadPage, player, home, header, demoGame, auth, security, securityGate, reauthRoute, securityPage, ratingRoute, ratingPanel, platform, loginForm, turnstile, updatePassword, passwordPolicy, callback, loginNotification, privacy, emailTemplate, analyzer, converter] = await Promise.all([
     readFile(new URL("../lib/upload.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/upload/UploadForm.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/upload/page.tsx", import.meta.url), "utf8"),
@@ -160,6 +163,8 @@ test("keeps upload, player, rating, login notification, and account security con
     readFile(new URL("../lib/login-notifications.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/privacy/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../emails/confirm-sign-up.html", import.meta.url), "utf8"),
+    readFile(new URL("../lib/project-analyzer.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/convert/Converter.tsx", import.meta.url), "utf8"),
   ]);
   assert.match(upload, /buffer\.byteLength > 50 \* 1024 \* 1024/);
   assert.match(upload, /expandedBytes > 250 \* 1024 \* 1024/);
@@ -230,5 +235,11 @@ test("keeps upload, player, rating, login notification, and account security con
   assert.match(privacy, /登入安全通知/);
   assert.match(emailTemplate, /OpenGames 開源遊戲平台/);
   assert.match(emailTemplate, /\{\{ \.ConfirmationURL \}\}/);
+  assert.match(header, /href="\/convert"/);
+  assert.match(uploadForm, /先在本機檢查專案或成品/);
+  assert.match(analyzer, /MAX_CENTRAL_DIRECTORY/);
+  assert.match(analyzer, /inspectExecutableHeader/);
+  assert.doesNotMatch(converter, /fetch\(/);
+  assert.match(converter, /never runs the program/);
   await assert.rejects(access(new URL("../app/_sites-preview/SkeletonPreview.tsx", import.meta.url)));
 });
