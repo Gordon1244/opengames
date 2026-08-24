@@ -43,7 +43,7 @@ export default function TurnstileWidget({
   onToken,
 }: {
   siteKey: string;
-  action: "login" | "signup" | "password_reset";
+  action: "login" | "signup" | "password_reset" | "account_security";
   locale?: unknown;
   resetSignal: number;
   onToken: (token: string) => void;

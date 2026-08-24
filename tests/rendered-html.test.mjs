@@ -166,6 +166,18 @@ test("rejects cross-site account reauthentication before reading credentials", a
   assert.match(await response.text(), /無效的驗證要求/);
 });
 
+test("logout redirects instead of throwing on an already-cleared session", async () => {
+  const worker = await loadWorker();
+  const response = await worker.fetch(
+    new Request("https://opengames.test/auth/signout", { method: "POST" }),
+    env(),
+    { waitUntil() {}, passThroughOnException() {} },
+  );
+  assert.equal(response.status, 303);
+  assert.equal(response.headers.get("location"), "https://opengames.test/");
+  assert.match(response.headers.get("cache-control") ?? "", /no-store/);
+});
+
 test("rejects cross-site rating changes before reading account or database state", async () => {
   const worker = await loadWorker();
   const response = await worker.fetch(
@@ -249,8 +261,11 @@ test("keeps upload, player, rating, login notification, and account security con
   assert.match(securityGate, /signInWithPasskey/);
   assert.match(securityGate, /challengeAndVerify/);
   assert.match(securityGate, /verifyWithServer/);
+  assert.match(securityGate, /action="account_security"/);
+  assert.match(securityGate, /signInWithPasskey\(\{ options: \{ captchaToken \} \}\)/);
   assert.match(reauthRoute, /origin === new URL\(request\.url\)\.origin/);
   assert.match(reauthRoute, /signInWithPassword/);
+  assert.match(reauthRoute, /options: \{ captchaToken: payload\.captchaToken \}/);
   assert.match(reauthRoute, /data\.user\?\.id === currentUser\.id/);
   assert.match(reauthRoute, /now - entry\.timestamp <= 120/);
   assert.doesNotMatch(reauthRoute, /console\.(?:log|error).*password/);

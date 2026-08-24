@@ -2,7 +2,7 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { getCurrentUser } from "../../../../lib/auth";
 
 type ReauthPayload =
-  | { method: "password"; password?: string }
+  | { method: "password"; password?: string; captchaToken?: string }
   | { method: "passkey" | "totp"; accessToken?: string };
 
 const noStoreHeaders = { "Cache-Control": "private, no-store" };
@@ -55,12 +55,19 @@ export async function POST(request: Request) {
     if (typeof payload.password !== "string" || payload.password.length < 1 || payload.password.length > 1024) {
       return Response.json({ error: "請輸入目前密碼。" }, { status: 400, headers: noStoreHeaders });
     }
-    const { data, error } = await verifier.auth.signInWithPassword({ email: currentUser.email, password: payload.password });
+    if (typeof payload.captchaToken !== "string" || payload.captchaToken.length < 1 || payload.captchaToken.length > 4096) {
+      return Response.json({ error: "請先完成 Cloudflare 安全驗證。" }, { status: 400, headers: noStoreHeaders });
+    }
+    const { data, error } = await verifier.auth.signInWithPassword({
+      email: currentUser.email,
+      password: payload.password,
+      options: { captchaToken: payload.captchaToken },
+    });
     const verified = !error && data.user?.id === currentUser.id;
     if (data.session) await verifier.auth.signOut({ scope: "local" }).catch(() => undefined);
     return verified
       ? Response.json({ ok: true }, { headers: noStoreHeaders })
-      : Response.json({ error: "密碼不正確，請再試一次。" }, { status: 401, headers: noStoreHeaders });
+      : Response.json({ error: "密碼或 Cloudflare 安全驗證未通過，請再試一次。" }, { status: 401, headers: noStoreHeaders });
   }
 
   if (typeof payload.accessToken !== "string" || payload.accessToken.length > 12_000) {

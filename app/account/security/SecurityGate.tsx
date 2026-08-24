@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { createClient } from "../../../lib/supabase/client";
 import SecuritySettings from "./SecuritySettings";
 import type { Locale } from "../../../lib/i18n";
+import TurnstileWidget from "../../../components/TurnstileWidget";
 
 type TotpFactor = { id: string; friendly_name?: string; status?: string };
 type Method = "password" | "passkey" | "totp";
@@ -24,7 +25,7 @@ async function verifyWithServer(payload: Record<string, string>, english: boolea
   if (!response.ok) throw new Error(english ? "Verification failed. Try again later." : (result.error || "驗證失敗，請稍後再試。"));
 }
 
-export default function SecurityGate({ locale, userId, challenge, notificationPending, nextPath }: { locale: Locale; userId: string; challenge: boolean; notificationPending: boolean; nextPath: string }) {
+export default function SecurityGate({ locale, userId, challenge, notificationPending, nextPath, turnstileSiteKey }: { locale: Locale; userId: string; challenge: boolean; notificationPending: boolean; nextPath: string; turnstileSiteKey: string }) {
   const english = locale === "en";
   const [method, setMethod] = useState<Method>(challenge ? "totp" : "password");
   const [totpFactors, setTotpFactors] = useState<TotpFactor[]>([]);
@@ -34,6 +35,8 @@ export default function SecurityGate({ locale, userId, challenge, notificationPe
   const [checking, setChecking] = useState(true);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [captchaToken, setCaptchaToken] = useState("");
+  const [captchaReset, setCaptchaReset] = useState(0);
 
   useEffect(() => {
     const task = window.setTimeout(() => {
@@ -60,21 +63,24 @@ export default function SecurityGate({ locale, userId, challenge, notificationPe
 
   async function verifyPassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!captchaToken) { setMessage(english ? "Complete the Cloudflare security check first." : "請先完成 Cloudflare 安全驗證。"); return; }
     setBusy(true); setMessage("");
     try {
-      await verifyWithServer({ method: "password", password }, english);
+      await verifyWithServer({ method: "password", password, captchaToken }, english);
       await complete();
     } catch (error) { setMessage(errorText(error, english)); }
+    setCaptchaReset((value) => value + 1);
     setBusy(false);
   }
 
   async function verifyPasskey() {
+    if (!captchaToken) { setMessage(english ? "Complete the Cloudflare security check first." : "請先完成 Cloudflare 安全驗證。"); return; }
     setBusy(true); setMessage("");
     try {
       const supabase = createClient();
       if (!supabase) throw new Error(english ? "The sign-in service is not configured." : "登入服務尚未設定。");
       const { data: before } = await supabase.auth.getUser();
-      const { data, error } = await supabase.auth.signInWithPasskey();
+      const { data, error } = await supabase.auth.signInWithPasskey({ options: { captchaToken } });
       if (error) throw error;
       if (!before.user || before.user.id !== userId || data.user?.id !== userId || !data.session?.access_token) {
         await supabase.auth.signOut({ scope: "local" });
@@ -83,6 +89,7 @@ export default function SecurityGate({ locale, userId, challenge, notificationPe
       await verifyWithServer({ method: "passkey", accessToken: data.session.access_token }, english);
       await complete();
     } catch (error) { setMessage(errorText(error, english)); }
+    setCaptchaReset((value) => value + 1);
     setBusy(false);
   }
 
@@ -114,13 +121,14 @@ export default function SecurityGate({ locale, userId, challenge, notificationPe
       <p className="reauth-copy">{english ? "Account security includes sensitive passkey and two-step verification settings, so you must verify again each time you enter." : "帳號安全包含密碼金鑰與二步驟驗證等敏感設定，因此每次進入都要重新驗證。"}</p>
       {challenge && <div className="security-alert"><strong>{english ? "Complete this sign-in" : "完成本次登入"}</strong><span>{english ? "Two-step verification is enabled. Continue with your authenticator." : "此帳號已啟用二步驟驗證，請使用驗證器繼續。"}</span></div>}
       {!challenge && <div className="reauth-methods" aria-label={english ? "Verification methods" : "再次驗證方式"}>
-        <button type="button" className={method === "password" ? "active" : ""} onClick={() => { setMethod("password"); setMessage(""); }}><span>PW</span><strong>{english ? "Current password" : "目前密碼"}</strong><small>{english ? "Enter your account password again" : "重新輸入帳號密碼"}</small></button>
-        <button type="button" className={method === "passkey" ? "active" : ""} onClick={() => { setMethod("passkey"); setMessage(""); }}><span>◇</span><strong>{english ? "Passkey" : "密碼金鑰"}</strong><small>{english ? "Windows Hello or security key" : "Windows Hello 或安全金鑰"}</small></button>
+        <button type="button" className={method === "password" ? "active" : ""} onClick={() => { setMethod("password"); setMessage(""); setCaptchaReset((value) => value + 1); }}><span>PW</span><strong>{english ? "Current password" : "目前密碼"}</strong><small>{english ? "Enter your account password again" : "重新輸入帳號密碼"}</small></button>
+        <button type="button" className={method === "passkey" ? "active" : ""} onClick={() => { setMethod("passkey"); setMessage(""); setCaptchaReset((value) => value + 1); }}><span>◇</span><strong>{english ? "Passkey" : "密碼金鑰"}</strong><small>{english ? "Windows Hello or security key" : "Windows Hello 或安全金鑰"}</small></button>
         {hasTotp && <button type="button" className={method === "totp" ? "active" : ""} onClick={() => { setMethod("totp"); setMessage(""); }}><span>06</span><strong>{english ? "Authenticator" : "驗證器"}</strong><small>{english ? "Enter a six-digit code" : "輸入 6 位數代碼"}</small></button>}
       </div>}
       {checking ? <p className="reauth-wait" role="status">{english ? "Checking available sign-in methods…" : "正在檢查可用的登入方式…"}</p> : <>
-        {method === "password" && !challenge && <form className="reauth-form" onSubmit={verifyPassword}><label>{english ? "Current password" : "目前密碼"}<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><button disabled={busy}>{busy ? (english ? "Confirming…" : "確認中…") : (english ? "Confirm and continue" : "確認並進入")}</button></form>}
-        {method === "passkey" && !challenge && <div className="reauth-action"><p>{english ? "Your device security prompt will open." : "系統會開啟這台裝置的安全驗證視窗。"}</p><button type="button" disabled={busy} onClick={verifyPasskey}>{busy ? (english ? "Waiting for your device…" : "等待裝置確認…") : (english ? "Confirm with a passkey" : "使用密碼金鑰確認")}</button></div>}
+        {!challenge && (method === "password" || method === "passkey") && <TurnstileWidget siteKey={turnstileSiteKey} action="account_security" locale={locale} resetSignal={captchaReset} onToken={setCaptchaToken} />}
+        {method === "password" && !challenge && <form className="reauth-form" onSubmit={verifyPassword}><label>{english ? "Current password" : "目前密碼"}<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label><button disabled={busy || !captchaToken}>{busy ? (english ? "Confirming…" : "確認中…") : (english ? "Confirm and continue" : "確認並進入")}</button></form>}
+        {method === "passkey" && !challenge && <div className="reauth-action"><p>{english ? "Your device security prompt will open." : "系統會開啟這台裝置的安全驗證視窗。"}</p><button type="button" disabled={busy || !captchaToken} onClick={verifyPasskey}>{busy ? (english ? "Waiting for your device…" : "等待裝置確認…") : (english ? "Confirm with a passkey" : "使用密碼金鑰確認")}</button></div>}
         {method === "totp" && hasTotp && <form className="reauth-form" onSubmit={verifyTotp}><label>{english ? "Six-digit verification code" : "6 位數驗證碼"}<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))} required /></label><button disabled={busy}>{busy ? (english ? "Verifying…" : "驗證中…") : challenge ? (english ? "Complete sign-in" : "完成登入") : (english ? "Verify and continue" : "驗證並進入")}</button></form>}
         {challenge && !hasTotp && <p className="reauth-error" role="alert">{english ? "No enabled authenticator was found. Sign out and try again, or contact the site administrator." : "找不到已啟用的驗證器。請登出後重新登入，或聯絡網站管理員。"}</p>}
       </>}
