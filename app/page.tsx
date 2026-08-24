@@ -60,7 +60,7 @@ export default async function Home() {
 
       <section className="creator-callout" id="creators">
         <div><p className="eyebrow light"><span /> BUILT IN THE OPEN</p><h2>{copy(locale, <>你做遊戲。<br />我們讓它被看見。</>, <>You make games.<br />We help them get seen.</>)}</h2></div>
-        <div className="creator-copy"><p>{copy(locale, "保有作品權利，自由決定授權與下載方式。打包 HTML5 遊戲、通過安全檢查，幾分鐘內分享給全世界。", "Keep the rights to your work and choose its license and download options. Package your HTML5 game, pass the safety checks, and share it worldwide in minutes.")}</p><a className="light-button" href="/upload">{copy(locale, "成為首批創作者", "Become an early creator")} <span>↗</span></a></div>
+        <div className="creator-copy"><p>{copy(locale, "保有作品權利，自由決定授權與下載方式。上傳 JavaScript、WebAssembly、Unity Web 或 .NET WebAssembly 建置，通過檢查後分享給全世界。", "Keep the rights to your work and choose its license and download options. Upload a JavaScript, WebAssembly, Unity Web, or .NET WebAssembly build and share it worldwide after validation.")}</p><a className="light-button" href="/upload">{copy(locale, "成為首批創作者", "Become an early creator")} <span>↗</span></a></div>
       </section>
 
       <SiteFooter />

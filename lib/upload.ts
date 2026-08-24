@@ -1,16 +1,51 @@
 import { unzip } from "fflate";
 
-const forbidden = new Set(["exe", "dll", "bat", "cmd", "ps1", "sh", "php", "py", "rb", "cgi", "jar", "msi", "scr", "com", "apk", "dmg", "pkg", "deb", "rpm", "zip", "rar", "7z", "tar", "gz"]);
+const forbidden = new Set(["exe", "bat", "cmd", "ps1", "sh", "php", "py", "rb", "cgi", "jar", "msi", "scr", "com", "apk", "dmg", "pkg", "deb", "rpm", "zip", "rar", "7z", "tar"]);
 const mimeTypes: Record<string, string> = { html: "text/html; charset=utf-8", htm: "text/html; charset=utf-8", css: "text/css; charset=utf-8", js: "text/javascript; charset=utf-8", mjs: "text/javascript; charset=utf-8", json: "application/json", wasm: "application/wasm", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp", gif: "image/gif", svg: "image/svg+xml", mp3: "audio/mpeg", ogg: "audio/ogg", wav: "audio/wav", mp4: "video/mp4", webm: "video/webm", woff: "font/woff", woff2: "font/woff2", ttf: "font/ttf", data: "application/octet-stream" };
 
-export type ScanResult = { files: Record<string, Uint8Array>; fileCount: number; expandedBytes: number; warnings: string[]; checksum: string };
+export type WebRuntime = "unity-web" | "dotnet-webassembly" | "webassembly" | "web";
+export type ScanResult = { files: Record<string, Uint8Array>; fileCount: number; expandedBytes: number; warnings: string[]; checksum: string; runtime: WebRuntime };
+
+function isDotNetFrameworkAssembly(path: string) {
+  return path.toLowerCase().startsWith("_framework/") && path.toLowerCase().endsWith(".dll");
+}
+
+function isCompressedWebAsset(path: string) {
+  return /\.(?:js|mjs|wasm|data|json|symbols\.json)\.gz$/i.test(path);
+}
 
 function safePath(name: string) {
   const normalized = name.replaceAll("\\", "/").replace(/^\.\//, "");
   if (!normalized || normalized.startsWith("/") || normalized.includes("../") || normalized.includes("\0") || /^[a-zA-Z]:/.test(normalized)) throw new Error(`不安全的檔案路徑：${name}`);
   const extension = normalized.split(".").pop()?.toLowerCase() ?? "";
   if (forbidden.has(extension)) throw new Error(`不允許的檔案類型：.${extension}`);
+  if (extension === "dll" && !isDotNetFrameworkAssembly(normalized)) throw new Error(".dll 只允許放在 .NET WebAssembly 的 _framework 目錄內。");
+  if (extension === "gz" && !isCompressedWebAsset(normalized)) throw new Error(".gz 只允許用於已壓縮的網頁建置資源。");
   return normalized;
+}
+
+function detectRuntime(files: Record<string, Uint8Array>): WebRuntime {
+  const paths = Object.keys(files);
+  if (paths.some((path) => /(^|\/)Build\/.*\.loader\.js$/i.test(path) || path.toLowerCase().endsWith(".unityweb"))) return "unity-web";
+  if (paths.some((path) => /^_framework\/(?:dotnet(?:\.[^/]+)?\.js|.*\.dll)$/i.test(path))) return "dotnet-webassembly";
+  if (paths.some((path) => /\.wasm(?:\.br|\.gz)?$/i.test(path))) return "webassembly";
+  return "web";
+}
+
+function compatibilityWarnings(files: Record<string, Uint8Array>) {
+  const warnings: string[] = [];
+  const decoder = new TextDecoder();
+  let remainingInspectionBytes = 5 * 1024 * 1024;
+  for (const [path, bytes] of Object.entries(files)) {
+    if (!/\.(?:html|js|mjs)$/i.test(path) || remainingInspectionBytes <= 0) continue;
+    const sample = bytes.subarray(0, Math.min(bytes.byteLength, remainingInspectionBytes));
+    remainingInspectionBytes -= sample.byteLength;
+    if (decoder.decode(sample).includes("SharedArrayBuffer")) {
+      warnings.push("shared-array-buffer");
+      break;
+    }
+  }
+  return warnings;
 }
 
 export async function scanAndExtractZip(buffer: ArrayBuffer): Promise<ScanResult> {
@@ -47,15 +82,23 @@ export async function scanAndExtractZip(buffer: ArrayBuffer): Promise<ScanResult
   if (!files["index.html"]) throw new Error("ZIP 根目錄必須包含 index.html。");
   const digest = await crypto.subtle.digest("SHA-256", buffer);
   const checksum = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
-  return { files, fileCount: entries.length, expandedBytes, warnings: [], checksum };
+  return { files, fileCount: entries.length, expandedBytes, warnings: compatibilityWarnings(files), checksum, runtime: detectRuntime(files) };
 }
 
-export function contentType(path: string) { return mimeTypes[path.split(".").pop()?.toLowerCase() ?? ""] ?? "application/octet-stream"; }
+export function contentType(path: string) {
+  const uncompressedPath = path.replace(/\.(?:br|gz)$/i, "");
+  return mimeTypes[uncompressedPath.split(".").pop()?.toLowerCase() ?? ""] ?? "application/octet-stream";
+}
+
+function objectMetadata(path: string): R2HTTPMetadata {
+  const contentEncoding = path.toLowerCase().endsWith(".br") ? "br" : path.toLowerCase().endsWith(".gz") ? "gzip" : undefined;
+  return { contentType: contentType(path), ...(contentEncoding ? { contentEncoding } : {}) };
+}
 
 export async function storeRelease(bucket: R2Bucket, releaseId: string, archive: ArrayBuffer, files: Record<string, Uint8Array>) {
   await bucket.put(`archives/${releaseId}.zip`, archive, { httpMetadata: { contentType: "application/zip", contentDisposition: `attachment; filename="opengames-${releaseId}.zip"` } });
   const entries = Object.entries(files);
   for (let offset = 0; offset < entries.length; offset += 25) {
-    await Promise.all(entries.slice(offset, offset + 25).map(([path, bytes]) => bucket.put(`releases/${releaseId}/${path}`, bytes, { httpMetadata: { contentType: contentType(path) } })));
+    await Promise.all(entries.slice(offset, offset + 25).map(([path, bytes]) => bucket.put(`releases/${releaseId}/${path}`, bytes, { httpMetadata: objectMetadata(path) })));
   }
 }

@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     await DB.batch([
       DB.prepare(`INSERT INTO profiles (id,email,handle,display_name,role,status) VALUES (?,?,?,?,?,'active') ON CONFLICT(id) DO UPDATE SET email=excluded.email, display_name=excluded.display_name, role=excluded.role, updated_at=CURRENT_TIMESTAMP`).bind(user.id, user.email, handleBase, creatorName, user.role),
       DB.prepare(`INSERT INTO games (id,slug,creator_id,title_zh,title_en,description_zh,description_en,category,tags,license,source_url,allow_download,status,current_release_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?, 'hidden',NULL)`).bind(gameId, slug, user.id, titleZh, titleEn, descriptionZh, descriptionEn, category, JSON.stringify(clean(form.get("tags"), 180).split(",").map((item) => item.trim()).filter(Boolean).slice(0, 8)), license, sourceUrl, form.get("allowDownload") === "on" ? 1 : 0),
-      DB.prepare(`INSERT INTO game_releases (id,game_id,version,archive_key,entry_path,checksum,status,scan_report) VALUES (?,?,?,?,?,?, 'scanning',?)`).bind(releaseId, gameId, version, `archives/${releaseId}.zip`, "index.html", scan.checksum, JSON.stringify({ fileCount: scan.fileCount, expandedBytes: scan.expandedBytes, checks: ["path", "type", "size", "entry"] })),
+      DB.prepare(`INSERT INTO game_releases (id,game_id,version,archive_key,entry_path,checksum,status,scan_report) VALUES (?,?,?,?,?,?, 'scanning',?)`).bind(releaseId, gameId, version, `archives/${releaseId}.zip`, "index.html", scan.checksum, JSON.stringify({ fileCount: scan.fileCount, expandedBytes: scan.expandedBytes, runtime: scan.runtime, warnings: scan.warnings, checks: ["path", "type", "size", "entry", "runtime"] })),
     ]);
     try {
       await storeRelease(GAMES, releaseId, buffer, scan.files);
@@ -67,7 +67,7 @@ export async function POST(request: Request) {
       DB.prepare(`UPDATE game_releases SET status = 'published' WHERE id = ?`).bind(releaseId),
       DB.prepare(`UPDATE games SET status = 'published', current_release_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`).bind(releaseId, gameId),
     ]);
-    return Response.json({ game: { id: gameId, slug, releaseId }, scan: { fileCount: scan.fileCount, expandedBytes: scan.expandedBytes } }, { status: 201 });
+    return Response.json({ game: { id: gameId, slug, releaseId }, scan: { fileCount: scan.fileCount, expandedBytes: scan.expandedBytes, runtime: scan.runtime, warnings: scan.warnings } }, { status: 201 });
   } catch (error) {
     return Response.json({ error: error instanceof Error ? error.message : "上傳失敗。" }, { status: 400 });
   }

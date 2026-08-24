@@ -136,8 +136,10 @@ test("rejects cross-site login notification requests", async () => {
 });
 
 test("keeps upload, player, rating, login notification, and account security controls in source", async () => {
-  const [upload, player, home, header, demoGame, auth, security, securityGate, reauthRoute, securityPage, ratingRoute, ratingPanel, platform, loginForm, turnstile, updatePassword, passwordPolicy, callback, loginNotification, privacy, emailTemplate] = await Promise.all([
+  const [upload, uploadForm, uploadPage, player, home, header, demoGame, auth, security, securityGate, reauthRoute, securityPage, ratingRoute, ratingPanel, platform, loginForm, turnstile, updatePassword, passwordPolicy, callback, loginNotification, privacy, emailTemplate] = await Promise.all([
     readFile(new URL("../lib/upload.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/upload/UploadForm.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/upload/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/api/play/[releaseId]/[...path]/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../components/SiteHeader.tsx", import.meta.url), "utf8"),
@@ -162,6 +164,13 @@ test("keeps upload, player, rating, login notification, and account security con
   assert.match(upload, /buffer\.byteLength > 50 \* 1024 \* 1024/);
   assert.match(upload, /expandedBytes > 250 \* 1024 \* 1024/);
   assert.match(upload, /normalized\.includes\("\.\.\/"\)/);
+  assert.match(upload, /"unity-web" \| "dotnet-webassembly" \| "webassembly" \| "web"/);
+  assert.match(upload, /isDotNetFrameworkAssembly/);
+  assert.match(upload, /contentEncoding/);
+  assert.match(uploadForm, /C# WebAssembly/);
+  assert.match(uploadForm, /Unity Web/);
+  assert.match(uploadForm, /EXE 與 APK 不是網頁建置/);
+  assert.match(uploadPage, /C# Unity Web 與 \.NET WebAssembly/);
   assert.match(player, /sandbox allow-scripts allow-pointer-lock/);
   assert.match(player, /connect-src 'self' data: blob:/);
   assert.match(player, /frame-ancestors 'self'/);
