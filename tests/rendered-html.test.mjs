@@ -136,7 +136,7 @@ test("rejects cross-site login notification requests", async () => {
 });
 
 test("keeps upload, player, rating, login notification, and account security controls in source", async () => {
-  const [upload, player, home, header, demoGame, auth, security, securityGate, reauthRoute, securityPage, ratingRoute, ratingPanel, platform, loginForm, updatePassword, passwordPolicy, callback, loginNotification, privacy, emailTemplate] = await Promise.all([
+  const [upload, player, home, header, demoGame, auth, security, securityGate, reauthRoute, securityPage, ratingRoute, ratingPanel, platform, loginForm, turnstile, updatePassword, passwordPolicy, callback, loginNotification, privacy, emailTemplate] = await Promise.all([
     readFile(new URL("../lib/upload.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/play/[releaseId]/[...path]/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
@@ -151,6 +151,7 @@ test("keeps upload, player, rating, login notification, and account security con
     readFile(new URL("../app/games/[slug]/RatingPanel.tsx", import.meta.url), "utf8"),
     readFile(new URL("../lib/platform.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/login/LoginForm.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../components/TurnstileWidget.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/account/password/UpdatePasswordForm.tsx", import.meta.url), "utf8"),
     readFile(new URL("../lib/password-policy.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/auth/callback/route.ts", import.meta.url), "utf8"),
@@ -193,6 +194,12 @@ test("keeps upload, player, rating, login notification, and account security con
   assert.match(security, /auth\.registerPasskey\(\)/);
   assert.doesNotMatch(security, /金鑰名稱|passkeyName|auth\.passkey\.update/);
   assert.match(loginForm, /api\/auth\/login-notification/);
+  assert.match(loginForm, /signInWithPassword\(\{ email, password, options: \{ captchaToken \} \}\)/);
+  assert.match(loginForm, /resetPasswordForEmail[\s\S]*captchaToken/);
+  assert.match(loginForm, /signInWithPasskey\(\{ options: \{ captchaToken \} \}\)/);
+  assert.match(turnstile, /challenges\.cloudflare\.com\/turnstile\/v0\/api\.js\?render=explicit/);
+  assert.match(turnstile, /"refresh-expired": "auto"/);
+  assert.match(turnstile, /window\.turnstile\.reset/);
   assert.match(loginForm, /passwordMeetsPolicy/);
   assert.match(passwordPolicy, /lowercase/);
   assert.match(passwordPolicy, /uppercase/);
