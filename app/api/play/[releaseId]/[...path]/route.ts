@@ -8,14 +8,10 @@ export async function GET(_request: Request, context: { params: Promise<{ releas
   const { DB, GAMES } = await getPlatformEnv();
   if (!DB || !GAMES) return new Response("Not found", { status: 404 });
   await ensureCoreTables(DB);
-  const release = await DB.prepare(`SELECT r.entry_path, g.id AS game_id FROM game_releases r JOIN games g ON g.current_release_id = r.id WHERE r.id = ? AND r.status = 'published' AND g.status = 'published' LIMIT 1`).bind(releaseId).first<{ entry_path: string; game_id: string }>();
+  const release = await DB.prepare(`SELECT r.entry_path FROM game_releases r JOIN games g ON g.current_release_id = r.id WHERE r.id = ? AND r.status = 'published' AND g.status = 'published' LIMIT 1`).bind(releaseId).first<{ entry_path: string }>();
   if (!release) return new Response("Not found", { status: 404 });
   const object = await GAMES?.get(`releases/${releaseId}/${safePath}`);
   if (!object) return new Response("Not found", { status: 404 });
-  if (safePath === release.entry_path) {
-    const day = new Date().toISOString().slice(0, 10);
-    await DB.prepare(`INSERT INTO play_metrics (game_id, day, plays) VALUES (?, ?, 1) ON CONFLICT(game_id, day) DO UPDATE SET plays = plays + 1`).bind(release.game_id, day).run();
-  }
   const headers = new Headers();
   object.writeHttpMetadata(headers);
   headers.set("ETag", object.httpEtag);

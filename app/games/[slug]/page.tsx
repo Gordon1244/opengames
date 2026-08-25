@@ -4,7 +4,7 @@ import { SiteHeader, SiteFooter } from "../../../components/SiteHeader";
 import { GameVisual } from "../../../components/GameVisual";
 import { findDemoGame, localizeGame, uploadedRowToGame, type Game } from "../../../lib/games";
 import { copy, getLocale, type Locale } from "../../../lib/i18n";
-import { getRatingSummaries, getUploadedGame } from "../../../lib/platform";
+import { getPlaySummaries, getRatingSummaries, getUploadedGame } from "../../../lib/platform";
 import ReportButton from "./ReportButton";
 import RatingPanel from "./RatingPanel";
 import GamePlayer from "../../../components/GamePlayer";
@@ -14,8 +14,9 @@ import { getCurrentUser } from "../../../lib/auth";
 async function loadGame(slug: string, locale: Locale): Promise<Game | null> {
   const demo = findDemoGame(slug);
   if (demo) {
-    const summary = (await getRatingSummaries([demo.id])).get(demo.id);
-    return { ...localizeGame(demo, locale), ratingAverage: summary?.average ?? 0, ratingCount: summary?.count ?? 0 };
+    const [ratingSummaries, playSummaries] = await Promise.all([getRatingSummaries([demo.id]), getPlaySummaries([demo.id])]);
+    const summary = ratingSummaries.get(demo.id);
+    return { ...localizeGame(demo, locale), plays: playSummaries.get(demo.id)?.plays ?? 0, ratingAverage: summary?.average ?? 0, ratingCount: summary?.count ?? 0 };
   }
   const row = await getUploadedGame(slug); if (!row) return null;
   return uploadedRowToGame(row, locale);

@@ -196,6 +196,21 @@ test("rejects cross-site rating changes before reading account or database state
   assert.match(await response.text(), /無效的評價要求/);
 });
 
+test("rejects cross-site play metrics before reading database state", async () => {
+  const worker = await loadWorker();
+  const response = await worker.fetch(
+    new Request("https://opengames.test/api/games/demo-void-runner/play", {
+      method: "POST",
+      headers: { Origin: "https://attacker.test" },
+    }),
+    env(),
+    { waitUntil() {}, passThroughOnException() {} },
+  );
+  assert.equal(response.status, 403);
+  assert.match(response.headers.get("cache-control") ?? "", /no-store/);
+  assert.match(await response.text(), /無效的遊玩紀錄要求/);
+});
+
 test("rejects cross-site login notification requests", async () => {
   const worker = await loadWorker();
   const response = await worker.fetch(
@@ -211,11 +226,13 @@ test("rejects cross-site login notification requests", async () => {
 });
 
 test("keeps upload, player, rating, login notification, and account security controls in source", async () => {
-  const [upload, uploadForm, uploadPage, player, home, header, demoGame, auth, security, securityGate, reauthRoute, securityPage, ratingRoute, ratingPanel, platform, loginForm, turnstile, updatePassword, passwordPolicy, callback, loginNotification, privacy, emailTemplate, analyzer, converter] = await Promise.all([
+  const [upload, uploadForm, uploadPage, player, playMetricRoute, gamePlayer, home, header, demoGame, auth, security, securityGate, reauthRoute, securityPage, ratingRoute, ratingPanel, platform, loginForm, turnstile, updatePassword, passwordPolicy, callback, loginNotification, privacy, emailTemplate, analyzer, converter] = await Promise.all([
     readFile(new URL("../lib/upload.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/upload/UploadForm.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/upload/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/api/play/[releaseId]/[...path]/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/games/[gameId]/play/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../components/GamePlayer.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../components/SiteHeader.tsx", import.meta.url), "utf8"),
     readFile(new URL("../public/demo/void-runner/index.html", import.meta.url), "utf8"),
@@ -252,6 +269,11 @@ test("keeps upload, player, rating, login notification, and account security con
   assert.match(player, /connect-src 'self' data: blob:/);
   assert.match(player, /frame-ancestors 'self'/);
   assert.match(player, /g\.current_release_id = r\.id/);
+  assert.doesNotMatch(player, /INSERT INTO play_metrics/);
+  assert.match(playMetricRoute, /origin === new URL\(request\.url\)\.origin/);
+  assert.match(playMetricRoute, /ON CONFLICT\(game_id, day\) DO UPDATE SET plays = plays \+ 1/);
+  assert.match(gamePlayer, /sessionStorage\.getItem\(storageKey\)/);
+  assert.match(gamePlayer, /onLoad=\{\(\) => \{ void countActualPlay\(\); \}\}/);
   assert.doesNotMatch(home + header, /next\/link/);
   assert.match(home, /<a className="primary-button" href="\/games">/);
   assert.match(demoGame, /reset\(\);draw\(0\)/);

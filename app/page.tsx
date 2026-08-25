@@ -3,12 +3,13 @@ import { SiteHeader, SiteFooter } from "../components/SiteHeader";
 import { GameVisual } from "../components/GameVisual";
 import { demoGames, localizeGame, sortRecommendedGames, uploadedRowToGame } from "../lib/games";
 import { copy, getLocale, numberLocale, type Locale } from "../lib/i18n";
-import { getRatingSummaries, getUploadedGames } from "../lib/platform";
+import { getPlaySummaries, getRatingSummaries, getUploadedGames } from "../lib/platform";
 
 async function homepageGames(locale: Locale) {
-  const [uploaded, demoRatings] = await Promise.all([getUploadedGames(), getRatingSummaries(demoGames.map((game) => game.id))]);
+  const demoIds = demoGames.map((game) => game.id);
+  const [uploaded, demoRatings, demoPlays] = await Promise.all([getUploadedGames(), getRatingSummaries(demoIds), getPlaySummaries(demoIds)]);
   const dynamicGames = uploaded.map((row) => uploadedRowToGame(row, locale)).filter((game) => !demoGames.some((demo) => demo.slug === game.slug));
-  const ratedDemos = demoGames.map((source) => { const game = localizeGame(source, locale); const summary = demoRatings.get(game.id); return { ...game, ratingAverage: summary?.average ?? 0, ratingCount: summary?.count ?? 0 }; });
+  const ratedDemos = demoGames.map((source) => { const game = localizeGame(source, locale); const summary = demoRatings.get(game.id); return { ...game, plays: demoPlays.get(game.id)?.plays ?? 0, ratingAverage: summary?.average ?? 0, ratingCount: summary?.count ?? 0 }; });
   return sortRecommendedGames([...dynamicGames, ...ratedDemos]);
 }
 
@@ -40,7 +41,7 @@ export default async function Home() {
               <div className="scene-copy"><span>COMMUNITY RATING / {featuredRating}</span><strong>{featured.title}</strong></div>
               <a href={`/games/${featured.slug}`} className="play-button" aria-label={`${copy(locale, "遊玩", "Play")} ${featured.title}`}><span>▶</span></a>
             </div>
-            <div className="window-footer"><div><strong>{featured.title.toUpperCase()}</strong><span>by {featured.creator}</span></div><div className="window-tags"><span>{featured.category}</span><span>★ {featured.ratingCount ? featured.ratingAverage.toFixed(1) : "NEW"}</span></div></div>
+            <div className="window-footer"><div><strong>{featured.title.toUpperCase()}</strong><span>by {featured.creator}</span></div><div className="window-tags"><span>{featured.category}</span><span>★ {featured.ratingCount ? featured.ratingAverage.toFixed(1) : (featured.isNew ? copy(locale, "新作", "NEW") : copy(locale, "尚無評價", "NOT RATED"))}</span></div></div>
           </div>
           <div className="floating-note note-one"><span>★</span> {featuredRating}</div><div className="floating-note note-two"><span>◎</span> {featured.ratingCount ? copy(locale, `${featured.ratingCount} 則玩家評價`, `${featured.ratingCount} player reviews`) : copy(locale, "等待第一則評價", "Waiting for the first review")}</div>
         </div>
@@ -52,7 +53,7 @@ export default async function Home() {
           {recommendations.map((game, index) => (
             <a className="game-card" key={game.title} href={`/games/${game.slug}`}>
               <GameVisual art={game.art} badge={index === 0 ? copy(locale, "社群高評價", "Highly rated") : game.badge} index={index + 2} />
-              <div className="game-info"><div><h3>{game.title}</h3><p>by {game.creator}</p></div><span className="card-rating">★ {game.ratingCount ? game.ratingAverage.toFixed(1) : copy(locale, "新作", "NEW")}<small>{game.ratingCount ? copy(locale, `${game.ratingCount} 則評價`, `${game.ratingCount} reviews`) : copy(locale, `${game.plays.toLocaleString("zh-TW")} 次遊玩`, `${game.plays.toLocaleString(numberLocale(locale))} plays`)}</small></span></div>
+              <div className="game-info"><div><h3>{game.title}</h3><p>by {game.creator}</p></div><span className="card-rating">★ {game.ratingCount ? game.ratingAverage.toFixed(1) : (game.isNew ? copy(locale, "新作", "NEW") : copy(locale, "尚無評價", "NOT RATED"))}<small>{game.ratingCount ? copy(locale, `${game.ratingCount} 則評價`, `${game.ratingCount} reviews`) : copy(locale, `${game.plays.toLocaleString("zh-TW")} 次遊玩`, `${game.plays.toLocaleString(numberLocale(locale))} plays`)}</small></span></div>
             </a>
           ))}
         </div>

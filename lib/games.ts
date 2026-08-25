@@ -10,18 +10,34 @@ export type Game = {
   multiplayerModes?: string[];
   multiplayerRoomPolicy?: "player" | "creator" | "global" | "hybrid"; multiplayerManagedUnlimited?: boolean;
   supportedLocales?: string[]; defaultLocale?: string;
+  releasedAt?: string; isNew?: boolean;
 };
 
+export const NEW_RELEASE_DAYS = 45;
+const NEW_RELEASE_MS = NEW_RELEASE_DAYS * 24 * 60 * 60 * 1000;
+const DEMO_RELEASED_AT = "2026-08-17T00:00:00Z";
+
+export function isNewRelease(releasedAt?: string, now: Date = new Date()) {
+  if (!releasedAt) return false;
+  const released = Date.parse(releasedAt);
+  const age = now.getTime() - released;
+  return Number.isFinite(released) && age >= 0 && age < NEW_RELEASE_MS;
+}
+
 export const demoGames: Game[] = [
-  { id: "demo-void-runner", slug: "void-runner", title: "Void Runner", titleEn: "Void Runner", creator: "OpenGames Lab", creatorHandle: "opengames", description: "穿越無盡星門，在速度與節奏之間找到唯一安全的路線。支援鍵盤與觸控。", descriptionEn: "Race through endless stargates and find the only safe line between speed and rhythm. Supports keyboard and touch.", category: "動作", categoryEn: "Action", tags: ["街機", "太空", "單人"], tagsEn: ["Arcade", "Space", "Single-player"], plays: 8241, badge: "本週精選", badgeEn: "Pick of the week", art: "void", license: "MIT", allowDownload: true, sourceUrl: "https://github.com/Gordon1244/opengames", version: "1.0.0", playUrl: "/demo/void-runner/index.html", ratingAverage: 0, ratingCount: 0 },
-  { id: "demo-neon-tideline", slug: "neon-tideline", title: "Neon Tideline", titleEn: "Neon Tideline", creator: "Morrow Studio", creatorHandle: "morrow", description: "跟著潮汐脈動，在變形的色彩海岸收集散落的訊號。", descriptionEn: "Follow the pulse of the tide and collect scattered signals along a shifting coast of color.", category: "冒險", categoryEn: "Adventure", tags: ["節奏", "氛圍", "短篇"], tagsEn: ["Rhythm", "Atmospheric", "Short"], plays: 6214, badge: "編輯精選", badgeEn: "Editor's pick", art: "tide", license: "CC BY-NC 4.0", allowDownload: false, version: "0.9.2", playUrl: "/demo/neon-tideline/index.html", ratingAverage: 0, ratingCount: 0 },
-  { id: "demo-orbital-common", slug: "orbital-common", title: "Orbital Common", titleEn: "Orbital Common", creator: "Ada & Finch", creatorHandle: "ada-finch", description: "在微型星系裡配置軌道，讓每一顆行星都找到共存的位置。", descriptionEn: "Arrange orbits in a miniature galaxy so every planet can find a place to coexist.", category: "策略", categoryEn: "Strategy", tags: ["益智", "太空", "開源"], tagsEn: ["Puzzle", "Space", "Open source"], plays: 4832, badge: "開放原始碼", badgeEn: "Open source", art: "orbit", license: "MIT", allowDownload: true, sourceUrl: "https://github.com/Gordon1244/opengames", version: "1.2.0", playUrl: "/demo/orbital-common/index.html", ratingAverage: 0, ratingCount: 0 },
-  { id: "demo-moon-garden", slug: "moon-garden", title: "Moon Garden", titleEn: "Moon Garden", creator: "Soft Relay", creatorHandle: "soft-relay", description: "在月光落下以前，照料一座只在夜晚生長的小花園。", descriptionEn: "Tend a tiny garden that grows only at night before the moonlight fades.", category: "休閒", categoryEn: "Casual", tags: ["療癒", "模擬", "短篇"], tagsEn: ["Cozy", "Simulation", "Short"], plays: 3941, badge: "新作", badgeEn: "New", art: "garden", license: "All rights reserved", allowDownload: false, version: "1.0.1", playUrl: "/demo/moon-garden/index.html", ratingAverage: 0, ratingCount: 0 },
+  { id: "demo-void-runner", slug: "void-runner", title: "Void Runner", titleEn: "Void Runner", creator: "OpenGames Lab", creatorHandle: "opengames", description: "穿越無盡星門，在速度與節奏之間找到唯一安全的路線。支援鍵盤與觸控。", descriptionEn: "Race through endless stargates and find the only safe line between speed and rhythm. Supports keyboard and touch.", category: "動作", categoryEn: "Action", tags: ["街機", "太空", "單人"], tagsEn: ["Arcade", "Space", "Single-player"], plays: 0, badge: "本週精選", badgeEn: "Pick of the week", art: "void", license: "MIT", allowDownload: true, sourceUrl: "https://github.com/Gordon1244/opengames", version: "1.0.0", playUrl: "/demo/void-runner/index.html", ratingAverage: 0, ratingCount: 0, releasedAt: DEMO_RELEASED_AT },
+  { id: "demo-neon-tideline", slug: "neon-tideline", title: "Neon Tideline", titleEn: "Neon Tideline", creator: "Morrow Studio", creatorHandle: "morrow", description: "跟著潮汐脈動，在變形的色彩海岸收集散落的訊號。", descriptionEn: "Follow the pulse of the tide and collect scattered signals along a shifting coast of color.", category: "冒險", categoryEn: "Adventure", tags: ["節奏", "氛圍", "短篇"], tagsEn: ["Rhythm", "Atmospheric", "Short"], plays: 0, badge: "編輯精選", badgeEn: "Editor's pick", art: "tide", license: "CC BY-NC 4.0", allowDownload: false, version: "0.9.2", playUrl: "/demo/neon-tideline/index.html", ratingAverage: 0, ratingCount: 0, releasedAt: DEMO_RELEASED_AT },
+  { id: "demo-orbital-common", slug: "orbital-common", title: "Orbital Common", titleEn: "Orbital Common", creator: "Ada & Finch", creatorHandle: "ada-finch", description: "在微型星系裡配置軌道，讓每一顆行星都找到共存的位置。", descriptionEn: "Arrange orbits in a miniature galaxy so every planet can find a place to coexist.", category: "策略", categoryEn: "Strategy", tags: ["益智", "太空", "開源"], tagsEn: ["Puzzle", "Space", "Open source"], plays: 0, badge: "開放原始碼", badgeEn: "Open source", art: "orbit", license: "MIT", allowDownload: true, sourceUrl: "https://github.com/Gordon1244/opengames", version: "1.2.0", playUrl: "/demo/orbital-common/index.html", ratingAverage: 0, ratingCount: 0, releasedAt: DEMO_RELEASED_AT },
+  { id: "demo-moon-garden", slug: "moon-garden", title: "Moon Garden", titleEn: "Moon Garden", creator: "Soft Relay", creatorHandle: "soft-relay", description: "在月光落下以前，照料一座只在夜晚生長的小花園。", descriptionEn: "Tend a tiny garden that grows only at night before the moonlight fades.", category: "休閒", categoryEn: "Casual", tags: ["療癒", "模擬", "短篇"], tagsEn: ["Cozy", "Simulation", "Short"], plays: 0, badge: "示範作品", badgeEn: "Demo", art: "garden", license: "All rights reserved", allowDownload: false, version: "1.0.1", playUrl: "/demo/moon-garden/index.html", ratingAverage: 0, ratingCount: 0, releasedAt: DEMO_RELEASED_AT },
 ];
 
-export function localizeGame(game: Game, locale: Locale): Game {
-  if (locale !== "en") return game;
-  return { ...game, title: game.titleEn || game.title, description: game.descriptionEn || game.description, category: game.categoryEn || game.category, tags: game.tagsEn || game.tags, badge: game.badgeEn || game.badge };
+export function localizeGame(game: Game, locale: Locale, now: Date = new Date()): Game {
+  const isNew = isNewRelease(game.releasedAt, now);
+  const localized = locale === "en"
+    ? { ...game, title: game.titleEn || game.title, description: game.descriptionEn || game.description, category: game.categoryEn || game.category, tags: game.tagsEn || game.tags, badge: game.badgeEn || game.badge }
+    : game;
+  const usesTimedNewBadge = game.badge === "示範作品";
+  return { ...localized, badge: isNew && usesTimedNewBadge ? (locale === "en" ? "New" : "新作") : localized.badge, isNew };
 }
 
 export function findDemoGame(slug: string) { return demoGames.find((game) => game.slug === slug); }
@@ -41,15 +57,17 @@ export function sortRecommendedGames(games: Game[]) {
 export function uploadedRowToGame(row: Record<string, unknown>, locale: Locale = "zh-Hant"): Game {
   const releaseId = String(row.current_release_id || "");
   const entryPath = String(row.entry_path || "index.html");
+  const releasedAt = String(row.created_at || "");
+  const isNew = isNewRelease(releasedAt);
   return {
     id: String(row.id), slug: String(row.slug), title: String(locale === "en" ? row.title_en || row.title_zh : row.title_zh), titleEn: String(row.title_en), creator: String(row.display_name), creatorHandle: String(row.handle), creatorId: String(row.creator_id || ""), creatorProfilePublic: Boolean(row.is_public),
-    description: String(locale === "en" ? row.description_en || row.description_zh : row.description_zh), category: locale === "en" ? categoryEnglish(String(row.category)) : String(row.category), tags: parseTags(row.tags), plays: Number(row.plays || 0), badge: locale === "en" ? "Community release" : "社群新作", art: "void",
+    description: String(locale === "en" ? row.description_en || row.description_zh : row.description_zh), category: locale === "en" ? categoryEnglish(String(row.category)) : String(row.category), tags: parseTags(row.tags), plays: Number(row.plays || 0), badge: isNew ? (locale === "en" ? "New" : "新作") : (locale === "en" ? "Community game" : "社群作品"), art: "void",
     license: String(row.license), allowDownload: Boolean(row.allow_download), sourceUrl: row.source_url ? String(row.source_url) : undefined, version: String(row.version || "1.0.0"),
     releaseId: releaseId || undefined, playUrl: `/api/play/${releaseId}/${entryPath}`, ratingAverage: Number(row.rating_average || 0), ratingCount: Number(row.rating_count || 0),
     cloudSavesEnabled: Boolean(row.cloud_saves_enabled), multiplayerEnabled: Boolean(row.multiplayer_enabled), multiplayerMaxPlayers: Math.min(8, Math.max(2, Number(row.multiplayer_max_players || 4))),
     multiplayerModes: parseMultiplayerModes(row.multiplayer_modes),
     multiplayerRoomPolicy: (["player", "creator", "global", "hybrid"].includes(String(row.multiplayer_room_policy)) ? String(row.multiplayer_room_policy) : "player") as Game["multiplayerRoomPolicy"], multiplayerManagedUnlimited: Boolean(row.multiplayer_managed_unlimited),
-    supportedLocales: parseSupportedLocales(row.supported_locales), defaultLocale: String(row.default_locale || "zh-Hant"),
+    supportedLocales: parseSupportedLocales(row.supported_locales), defaultLocale: String(row.default_locale || "zh-Hant"), releasedAt, isNew,
   };
 }
 

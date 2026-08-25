@@ -22,6 +22,17 @@ export default function GamePlayer({ title, playUrl, gameId, uiLocale, gameLocal
   const [bridgeReady, setBridgeReady] = useState(false);
   const english = uiLocale === "en";
 
+  async function countActualPlay() {
+    const storageKey = `opengames:play-counted:${gameId}`;
+    try {
+      if (window.sessionStorage.getItem(storageKey)) return;
+      const response = await fetch(`/api/games/${encodeURIComponent(gameId)}/play`, { method: "POST", credentials: "same-origin", keepalive: true });
+      if (response.ok) window.sessionStorage.setItem(storageKey, "1");
+    } catch {
+      // Metrics must never prevent the game from loading.
+    }
+  }
+
   function post(payload: Record<string, unknown>) {
     iframeRef.current?.contentWindow?.postMessage({ source: "opengames-platform", version: 1, ...payload }, "*");
   }
@@ -154,5 +165,5 @@ export default function GamePlayer({ title, playUrl, gameId, uiLocale, gameLocal
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return <section className="player-wrap"><div className="player-bar"><div><i /> SANDBOXED PLAYER</div><span>{bridgeReady ? (english ? "OpenGames services connected — credentials stay private" : "OpenGames 服務已連接，帳號憑證保持隔離") : (english ? "Account data is isolated from the game" : "遊戲無法直接讀取帳號資料")}</span></div><iframe ref={iframeRef} title={`${title} ${english ? "game" : "遊戲"}`} src={playUrl} sandbox="allow-scripts allow-pointer-lock" allow="autoplay; fullscreen; gamepad" allowFullScreen /></section>;
+  return <section className="player-wrap"><div className="player-bar"><div><i /> SANDBOXED PLAYER</div><span>{bridgeReady ? (english ? "OpenGames services connected — credentials stay private" : "OpenGames 服務已連接，帳號憑證保持隔離") : (english ? "Account data is isolated from the game" : "遊戲無法直接讀取帳號資料")}</span></div><iframe ref={iframeRef} title={`${title} ${english ? "game" : "遊戲"}`} src={playUrl} onLoad={() => { void countActualPlay(); }} sandbox="allow-scripts allow-pointer-lock" allow="autoplay; fullscreen; gamepad" allowFullScreen /></section>;
 }

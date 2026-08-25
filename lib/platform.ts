@@ -90,7 +90,7 @@ export async function getUploadedGames() {
   const { DB } = await getPlatformEnv();
   if (!DB) return [];
   await ensureCoreTables(DB);
-  const result = await DB.prepare(`SELECT g.id, g.slug, g.title_zh, g.title_en, g.description_zh, g.category, g.tags, g.license, g.source_url, g.allow_download, g.current_release_id, p.display_name, p.handle, COALESCE((SELECT SUM(pm.plays) FROM play_metrics pm WHERE pm.game_id = g.id), 0) AS plays, COALESCE((SELECT ROUND(AVG(gr.rating), 1) FROM game_ratings gr WHERE gr.game_id = g.id), 0) AS rating_average, COALESCE((SELECT COUNT(*) FROM game_ratings gr WHERE gr.game_id = g.id), 0) AS rating_count FROM games g JOIN profiles p ON p.id = g.creator_id WHERE g.status = 'published' ORDER BY g.created_at DESC LIMIT 60`).all<Record<string, unknown>>();
+  const result = await DB.prepare(`SELECT g.id, g.slug, g.creator_id, g.title_zh, g.title_en, g.description_zh, g.description_en, g.category, g.tags, g.license, g.source_url, g.allow_download, g.current_release_id, g.created_at, p.display_name, p.handle, COALESCE((SELECT SUM(pm.plays) FROM play_metrics pm WHERE pm.game_id = g.id), 0) AS plays, COALESCE((SELECT ROUND(AVG(gr.rating), 1) FROM game_ratings gr WHERE gr.game_id = g.id), 0) AS rating_average, COALESCE((SELECT COUNT(*) FROM game_ratings gr WHERE gr.game_id = g.id), 0) AS rating_count FROM games g JOIN profiles p ON p.id = g.creator_id WHERE g.status = 'published' ORDER BY g.created_at DESC LIMIT 60`).all<Record<string, unknown>>();
   return result.results ?? [];
 }
 
@@ -102,6 +102,19 @@ export async function getUploadedGame(slug: string) {
 }
 
 export type RatingSummary = { average: number; count: number };
+export type PlaySummary = { plays: number };
+
+export async function getPlaySummaries(gameIds: string[]) {
+  const summaries = new Map<string, PlaySummary>();
+  const uniqueIds = [...new Set(gameIds)].filter(Boolean).slice(0, 100);
+  const { DB } = await getPlatformEnv();
+  if (!DB || uniqueIds.length === 0) return summaries;
+  await ensureCoreTables(DB);
+  const placeholders = uniqueIds.map(() => "?").join(",");
+  const result = await DB.prepare(`SELECT game_id, SUM(plays) AS plays FROM play_metrics WHERE game_id IN (${placeholders}) GROUP BY game_id`).bind(...uniqueIds).all<{ game_id: string; plays: number }>();
+  for (const row of result.results ?? []) summaries.set(row.game_id, { plays: Number(row.plays || 0) });
+  return summaries;
+}
 
 export async function getRatingSummaries(gameIds: string[]) {
   const summaries = new Map<string, RatingSummary>();
