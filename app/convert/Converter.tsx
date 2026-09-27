@@ -84,13 +84,13 @@ function verdictCopy(report: ProjectAnalysis) {
 }
 
 function guideHref(kind: ProjectKind) {
-  if (kind === "unity-project") return "/guides#unity";
-  if (kind === "cpp-project") return "/guides#cpp";
-  if (kind === "dotnet-project") return "/guides#dotnet";
-  if (kind === "godot-project") return "/guides#godot";
-  if (kind === "web-build") return "/guides#package";
-  if (kind === "windows-executable" || kind === "android-package" || kind === "android-web-wrapper") return "/guides#choose";
-  return "/guides";
+  if (kind === "unity-project") return "/developers#unity";
+  if (kind === "cpp-project") return "/developers#cpp";
+  if (kind === "dotnet-project") return "/developers#dotnet";
+  if (kind === "godot-project") return "/developers#godot";
+  if (kind === "web-build") return "/developers#package";
+  if (kind === "windows-executable" || kind === "android-package" || kind === "android-web-wrapper") return "/developers#quickstart";
+  return "/developers";
 }
 
 export default function Converter({ locale }: { locale: Locale }) {

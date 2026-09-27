@@ -146,7 +146,7 @@ export default function GamePlayer({ title, playUrl, gameId, uiLocale, gameLocal
           const response = await fetch(`/api/games/${encodeURIComponent(gameId)}/saves?slot=${encodeURIComponent(slot)}`, { cache: "no-store" }); result = await response.json(); if (!response.ok) throw new Error((result as { error?: string }).error || "SAVE_LOAD_FAILED");
         } else if (request.type === "save.write") {
           if (!cloudSavesEnabled) throw new Error("FEATURE_DISABLED");
-          const response = await fetch(`/api/games/${encodeURIComponent(gameId)}/saves`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slot: request.slot || "default", data: request.data, version: request.saveVersion ?? 0 }) }); result = await response.json(); if (!response.ok) throw new Error((result as { error?: string }).error || "SAVE_WRITE_FAILED");
+          const response = await fetch(`/api/games/${encodeURIComponent(gameId)}/saves`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slot: request.slot || "default", data: request.data, version: request.saveVersion ?? 0 }) }); result = await response.json(); if (!response.ok) throw new Error((result as { code?: string; error?: string }).code || (result as { error?: string }).error || "SAVE_WRITE_FAILED");
         } else if (request.type === "save.delete") {
           if (!cloudSavesEnabled) throw new Error("FEATURE_DISABLED");
           const slot = typeof request.slot === "string" ? request.slot : "default";

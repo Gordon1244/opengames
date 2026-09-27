@@ -94,41 +94,56 @@ test("renders policy and authentication surfaces", async () => {
   assert.match(await profile.text(), /請先登入，再編輯創作者資料/);
 });
 
-test("renders bilingual source-export guides with official references and platform limits", async () => {
+test("renders the complete bilingual developer center", async () => {
   const [zhResponse, enResponse] = await Promise.all([
-    render("/guides"),
-    render("/guides", { cookie: "opengames_locale=en" }),
+    render("/developers"),
+    render("/developers", { cookie: "opengames_locale=en" }),
   ]);
   assert.equal(zhResponse.status, 200);
   assert.equal(enResponse.status, 200);
   const [zh, en] = await Promise.all([zhResponse.text(), enResponse.text()]);
-  assert.match(zh, /Unity C#.*Web 建置/s);
-  assert.match(zh, /C／C\+\+.*Emscripten WebAssembly/s);
-  assert.match(zh, /Godot 4 的 C# 專案目前不能匯出 Web/);
+  assert.match(zh, /OpenGames 開發者中心 — 遊戲規格與 SDK/);
+  assert.match(zh, /Unity C#.*Web/s);
+  assert.match(zh, /C／C\+\+.*Emscripten/s);
+  assert.match(zh, /Godot 4 C# 目前不能匯出到 Web/);
   assert.match(zh, /py -m http\.server 8080/);
-  assert.match(zh, /外部 API／多人連線失敗/);
+  assert.match(zh, /ZIP 根目錄必須直接看到 index\.html/);
+  assert.match(zh, /壓縮後 50 MiB.*解壓後 250 MiB.*2,000 個檔案/s);
+  assert.match(zh, /外部 API、任意伺服器、原生 TCP／UDP/);
+  assert.match(zh, /SharedArrayBuffer/);
   assert.match(zh, /docs\.unity3d\.com\/6000\.0/);
   assert.match(zh, /emscripten\.org\/docs\/getting_started\/Tutorial\.html/);
-  assert.match(zh, /learn\.microsoft\.com\/aspnet\/core\/blazor/);
+  assert.match(zh, /learn\.microsoft\.com\/en-us\/aspnet\/core\/blazor/);
   assert.match(zh, /docs\.godotengine\.org\/en\/stable/);
-  assert.match(en, /Bring your game.*to the browser/s);
-  assert.match(en, /Free guide.*no compilation server required/s);
-});
-
-test("renders the bilingual account saves and multiplayer SDK guide", async () => {
-  const [zhResponse, enResponse] = await Promise.all([
-    render("/guides/platform-services"),
-    render("/guides/platform-services", { cookie: "opengames_locale=en" }),
-  ]);
-  assert.equal(zhResponse.status, 200);
-  assert.equal(enResponse.status, 200);
-  const [zh, en] = await Promise.all([zhResponse.text(), enResponse.text()]);
-  assert.match(zh, /把帳號服務.*接進你的遊戲/s);
   assert.match(zh, /OpenGames\.saves\.write/);
+  assert.match(zh, /OpenGames\.multiplayer\.create/);
+  assert.match(zh, /OpenGames\.multiplayer\.joinGlobal/);
+  assert.match(zh, /MESSAGE_TOO_LARGE/);
+  assert.match(zh, /每個遊戲頁每秒最多傳送 30 次/);
   assert.match(zh, /全遊戲世界/);
   assert.match(zh, /無活動 10 分鐘後關閉/);
-  assert.match(en, /Connect account services.*to your game/s);
+  assert.match(en, /Build once.*Play in the browser/s);
+  assert.match(en, /The complete contract for exporting, packaging, testing, publishing/);
+  assert.match(en, /External APIs, arbitrary servers, raw TCP\/UDP/);
+  assert.match(en, /OpenGames\.saves\.write/);
   assert.match(en, /OpenGames\.multiplayer\.joinGlobal/);
+  assert.match(en, /Copy/);
+  assert.match(en, /rel="canonical" href="https:\/\/opengames-arcade\.com\/developers"/);
+});
+
+test("permanently redirects legacy guides to the canonical developer sections", async () => {
+  const worker = await loadWorker();
+  const context = { waitUntil() {}, passThroughOnException() {} };
+  const [exportsGuide, sdkGuide, localDeveloperPage] = await Promise.all([
+    worker.fetch(new Request("http://www.opengames-arcade.com/guides?from=legacy"), env(), context),
+    worker.fetch(new Request("https://opengames.test/guides/platform-services?lang=en"), env(), context),
+    worker.fetch(new Request("http://localhost/developers"), env(), context),
+  ]);
+  assert.equal(exportsGuide.status, 308);
+  assert.equal(exportsGuide.headers.get("location"), "https://opengames-arcade.com/developers?from=legacy#build-export");
+  assert.equal(sdkGuide.status, 308);
+  assert.equal(sdkGuide.headers.get("location"), "https://opengames-arcade.com/developers?lang=en#sdk");
+  assert.equal(localDeveloperPage.status, 200);
 });
 
 test("keeps the game bridge, save limits, and Realtime policies in source", async () => {
@@ -146,6 +161,7 @@ test("keeps the game bridge, save limits, and Realtime policies in source", asyn
   assert.match(saves, /MAX_SAVE_BYTES = 64 \* 1024/);
   assert.match(saves, /MAX_SLOTS = 10/);
   assert.match(saves, /VERSION_CONFLICT/);
+  assert.match(bridge, /code\?: string; error\?: string/);
   assert.match(schema, /extensions\.crypt\(p_password/);
   assert.match(schema, /interval '10 minutes'/);
   assert.match(schema, /OpenGames room members receive realtime/);
@@ -226,7 +242,7 @@ test("rejects cross-site login notification requests", async () => {
 });
 
 test("keeps upload, player, rating, login notification, and account security controls in source", async () => {
-  const [upload, uploadForm, uploadPage, player, playMetricRoute, gamePlayer, home, header, demoGame, auth, security, securityGate, reauthRoute, securityPage, ratingRoute, ratingPanel, platform, loginForm, turnstile, updatePassword, passwordPolicy, callback, loginNotification, privacy, emailTemplate, analyzer, converter] = await Promise.all([
+  const [upload, uploadForm, uploadPage, player, playMetricRoute, gamePlayer, home, header, demoGame, auth, security, securityGate, reauthRoute, securityPage, ratingRoute, ratingPanel, platform, loginForm, turnstile, updatePassword, passwordPolicy, callback, loginNotification, privacy, emailTemplate, analyzer, converter, developerCode] = await Promise.all([
     readFile(new URL("../lib/upload.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/upload/UploadForm.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/upload/page.tsx", import.meta.url), "utf8"),
@@ -254,6 +270,7 @@ test("keeps upload, player, rating, login notification, and account security con
     readFile(new URL("../emails/confirm-sign-up.html", import.meta.url), "utf8"),
     readFile(new URL("../lib/project-analyzer.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/convert/Converter.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../components/DeveloperCode.tsx", import.meta.url), "utf8"),
   ]);
   assert.match(upload, /buffer\.byteLength > 50 \* 1024 \* 1024/);
   assert.match(upload, /expandedBytes > 250 \* 1024 \* 1024/);
@@ -333,13 +350,17 @@ test("keeps upload, player, rating, login notification, and account security con
   assert.match(emailTemplate, /OpenGames 開源遊戲平台/);
   assert.match(emailTemplate, /\{\{ \.ConfirmationURL \}\}/);
   assert.match(header, /href="\/convert"/);
-  assert.match(header, /href="\/guides"/);
+  assert.match(header, /href="\/developers"/);
+  assert.doesNotMatch(header, /href="\/guides"/);
+  assert.match(uploadForm, /href="\/developers#build-export"/);
   assert.match(uploadForm, /先在本機檢查專案或成品/);
-  assert.match(uploadForm, /查看完整匯出與封裝教學/);
+  assert.match(uploadForm, /查看完整開發與封裝文件/);
   assert.match(analyzer, /MAX_CENTRAL_DIRECTORY/);
   assert.match(analyzer, /inspectExecutableHeader/);
   assert.doesNotMatch(converter, /fetch\(/);
   assert.match(converter, /never runs the program/);
+  assert.match(developerCode, /navigator\.clipboard\?\.writeText/);
+  assert.match(developerCode, /document\.execCommand\("copy"\)/);
   await assert.rejects(access(new URL("../app/_sites-preview/SkeletonPreview.tsx", import.meta.url)));
 });
 

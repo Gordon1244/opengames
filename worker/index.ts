@@ -28,10 +28,27 @@ interface ExecutionContext {
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+    const legacyDeveloperAnchor = new Map([
+      ["/guides", "build-export"],
+      ["/guides/", "build-export"],
+      ["/guides/platform-services", "sdk"],
+      ["/guides/platform-services/", "sdk"],
+    ]).get(url.pathname);
 
-    if (url.protocol === "http:" || url.hostname === "www.opengames-arcade.com") {
+    if (legacyDeveloperAnchor) {
       url.protocol = "https:";
       url.hostname = "opengames-arcade.com";
+      url.port = "";
+      url.pathname = "/developers";
+      url.hash = legacyDeveloperAnchor;
+      return Response.redirect(url.toString(), 308);
+    }
+
+    const productionHostname = url.hostname === "opengames-arcade.com" || url.hostname === "www.opengames-arcade.com";
+    if ((url.protocol === "http:" && productionHostname) || url.hostname === "www.opengames-arcade.com") {
+      url.protocol = "https:";
+      url.hostname = "opengames-arcade.com";
+      url.port = "";
       return Response.redirect(url.toString(), 308);
     }
 
