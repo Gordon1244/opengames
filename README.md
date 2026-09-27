@@ -2,6 +2,8 @@
 
 好遊戲，不該被埋沒。OpenGames 是一個開源遊戲平台，讓創作者上傳以 HTML、CSS、JavaScript 製作的遊戲，玩家不必安裝即可在瀏覽器直接遊玩。
 
+目前穩定版本為 **1.0.0**。後續版本依語意化版本規則迭代，版本內容記錄於 [CHANGELOG.md](CHANGELOG.md)。
+
 ## 功能
 
 - 公開遊戲目錄、搜尋、分類與作品詳情頁
@@ -10,10 +12,11 @@
 - 創作者儀表板、發布暫停與下載授權控制
 - 檢舉流程、管理員審核與下架
 - Cloudflare D1 中繼資料與實際遊玩統計
+- 公開雙語開發者中心、OpenGames SDK v1 帳號存檔與多人連線文件
 
 ## 公開網站
 
-目前使用 Sites 提供的免費網址：<https://opengames-arcade.momognchou.chatgpt.site>。不需要購買 `opengames.com`，也不需要自行設定 DNS；未來若買下自訂網域，再把 DNS 委派給 Cloudflare 即可。
+正式網站：<https://opengames-arcade.com>。完整遊戲整合規格請見[開發者中心](https://opengames-arcade.com/developers)。
 
 ## 本機開發
 
