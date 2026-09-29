@@ -1,5 +1,6 @@
 "use client";
 import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 import PasswordRequirements from "../../components/PasswordRequirements";
 import TurnstileWidget from "../../components/TurnstileWidget";
 import { PASSWORD_MIN_LENGTH, PASSWORD_PATTERN, passwordMeetsPolicy } from "../../lib/password-policy";
@@ -8,6 +9,7 @@ import type { Locale } from "../../lib/i18n";
 
 export default function LoginForm({ nextPath, locale, turnstileSiteKey }: { nextPath: string; locale: Locale; turnstileSiteKey: string }) {
   const english = locale === "en";
+  const router = useRouter();
   const [mode, setMode] = useState<"login" | "register" | "recover">("login");
   const [message, setMessage] = useState("");
   const [passwordValue, setPasswordValue] = useState("");
@@ -31,11 +33,11 @@ export default function LoginForm({ nextPath, locale, turnstileSiteKey }: { next
   async function finishSignIn(supabase: NonNullable<ReturnType<typeof createClient>>) {
     const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
     if (data?.nextLevel === "aal2" && data.currentLevel !== "aal2") {
-      location.href = `/account/security?challenge=1&notify=1&next=${encodeURIComponent(nextPath)}`;
+      router.push(`/account/security?challenge=1&notify=1&next=${encodeURIComponent(nextPath)}`);
       return;
     }
     await sendLoginNotification();
-    location.href = nextPath;
+    router.push(nextPath);
   }
   async function signInWithPasskey() {
     setBusy(true); setMessage("");

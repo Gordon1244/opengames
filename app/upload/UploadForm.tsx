@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { Locale } from "../../lib/i18n";
 
 type Runtime = "unity-web" | "dotnet-webassembly" | "webassembly" | "web";
@@ -14,6 +15,7 @@ function runtimeName(runtime: Runtime | undefined, english: boolean) {
 
 export default function UploadForm({ locale }: { locale: Locale }) {
   const english = locale === "en";
+  const router = useRouter();
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -32,7 +34,7 @@ export default function UploadForm({ locale }: { locale: Locale }) {
     setStatus(english
       ? `${detected} verified with ${result.scan?.fileCount ?? 0} files. Opening the game page…`
       : `已辨識為 ${detected}，共檢查 ${result.scan?.fileCount ?? 0} 個檔案。正在前往作品頁…`);
-    window.setTimeout(() => { location.href = `/games/${result.game!.slug}`; }, 450);
+    window.setTimeout(() => { router.push(`/games/${result.game!.slug}`); }, 450);
   }
 
   return <form className="upload-form" onSubmit={submit}>

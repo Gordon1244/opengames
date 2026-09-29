@@ -2,7 +2,7 @@
 
 好遊戲，不該被埋沒。OpenGames 是一個開源遊戲平台，讓創作者上傳以 HTML、CSS、JavaScript 製作的遊戲，玩家不必安裝即可在瀏覽器直接遊玩。
 
-目前穩定版本為 **1.0.0**。後續版本依語意化版本規則迭代，版本內容記錄於 [CHANGELOG.md](CHANGELOG.md)。
+目前穩定版本為 **1.0.1**。後續版本依語意化版本規則迭代，版本內容記錄於 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 功能
 
