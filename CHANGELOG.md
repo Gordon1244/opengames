@@ -2,6 +2,17 @@
 
 本檔記錄 OpenGames 對外版本。版本號遵循 `MAJOR.MINOR.PATCH`：不相容變更提升 MAJOR、向下相容功能提升 MINOR、修正與文件更新提升 PATCH。
 
+## [1.0.2] - 2026-10-01
+
+### Fixed
+
+- 統一驗證登入、二步驟驗證與語言切換的站內返回網址，拒絕通訊協定相對網址及反斜線型外部導向。
+- 登入、二步驟驗證挑戰與密碼更新完成後改用取代式導覽，避免瀏覽器返回已完成的一次性表單；上傳完成後仍保留一般作品頁導覽。
+
+### Release
+
+- 保留 `v1.0.1` 的套件相容性修正，並以本修補版作為 Sites 版本 31 的正式升級候選。
+
 ## [1.0.1] - 2026-09-29
 
 ### Changed
@@ -38,5 +49,6 @@
 - 平台版本自本版起從 `1.0.0` 迭代。
 - SDK 方法維持獨立的 `v1` 相容性承諾；平台 PATCH 或 MINOR 更新不會自動改變 SDK 主版本。
 
+[1.0.2]: https://github.com/Gordon1244/opengames/tree/v1.0.2
 [1.0.1]: https://github.com/Gordon1244/opengames/tree/v1.0.1
 [1.0.0]: https://github.com/Gordon1244/opengames/tree/v1.0.0

@@ -33,11 +33,11 @@ export default function LoginForm({ nextPath, locale, turnstileSiteKey }: { next
   async function finishSignIn(supabase: NonNullable<ReturnType<typeof createClient>>) {
     const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
     if (data?.nextLevel === "aal2" && data.currentLevel !== "aal2") {
-      router.push(`/account/security?challenge=1&notify=1&next=${encodeURIComponent(nextPath)}`);
+      router.replace(`/account/security?challenge=1&notify=1&next=${encodeURIComponent(nextPath)}`);
       return;
     }
     await sendLoginNotification();
-    router.push(nextPath);
+    router.replace(nextPath);
   }
   async function signInWithPasskey() {
     setBusy(true); setMessage("");

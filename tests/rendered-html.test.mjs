@@ -325,6 +325,8 @@ test("keeps upload, player, rating, login notification, and account security con
   assert.match(loginForm, /signInWithPassword\(\{ email, password, options: \{ captchaToken \} \}\)/);
   assert.match(loginForm, /resetPasswordForEmail[\s\S]*captchaToken/);
   assert.match(loginForm, /signInWithPasskey\(\{ options: \{ captchaToken \} \}\)/);
+  assert.match(loginForm, /router\.replace\(nextPath\)/);
+  assert.doesNotMatch(loginForm, /router\.push\(/);
   assert.match(turnstile, /challenges\.cloudflare\.com\/turnstile\/v0\/api\.js\?render=explicit/);
   assert.match(turnstile, /"refresh-expired": "auto"/);
   assert.match(turnstile, /window\.turnstile\.reset/);
@@ -336,6 +338,7 @@ test("keeps upload, player, rating, login notification, and account security con
   assert.match(updatePassword, /auth\.reauthenticate\(\)/);
   assert.match(updatePassword, /reauthentication_needed/);
   assert.match(updatePassword, /updateUser\(\{ password, \.\.\.\(nonce \? \{ nonce \}/);
+  assert.match(updatePassword, /router\.replace\("\/dashboard"\)/);
   assert.match(callback, /sendLoginNotification/);
   assert.match(loginNotification, /INSERT OR IGNORE INTO login_notifications/);
   assert.match(loginNotification, /claims\.session_id/);
@@ -353,6 +356,7 @@ test("keeps upload, player, rating, login notification, and account security con
   assert.match(header, /href="\/developers"/);
   assert.doesNotMatch(header, /href="\/guides"/);
   assert.match(uploadForm, /href="\/developers#build-export"/);
+  assert.match(uploadForm, /router\.push\(`\/games\/\$\{result\.game!\.slug\}`\)/);
   assert.match(uploadForm, /先在本機檢查專案或成品/);
   assert.match(uploadForm, /查看完整開發與封裝文件/);
   assert.match(analyzer, /MAX_CENTRAL_DIRECTORY/);
