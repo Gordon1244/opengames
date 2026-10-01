@@ -30,6 +30,10 @@ test("renders the premium public home page and absolute social metadata", async 
   const html = await response.text();
   assert.match(html, /<title>OpenGames — 好遊戲，不該被埋沒<\/title>/);
   assert.match(html, /好遊戲/);
+  assert.match(html, /把你的 AI 遊戲/);
+  assert.match(html, /做完就發布/);
+  assert.match(html, /作品是你的/);
+  assert.match(html, /暫停標語/);
   assert.match(html, /THE OPEN ARCADE/);
   assert.match(html, /RATED BY THE COMMUNITY/);
   assert.match(html, /社群現在推薦這些遊戲/);
@@ -48,6 +52,10 @@ test("renders the English interface from the remembered locale cookie", async ()
   const [homeHtml, gamesHtml, securityHtml] = await Promise.all([home.text(), games.text(), security.text()]);
   assert.match(homeHtml, /<html lang="en">/);
   assert.match(homeHtml, /Great games.*deserve to be found/s);
+  assert.match(homeHtml, /Bring your AI game.*to OpenGames/s);
+  assert.match(homeHtml, /Build\. Publish\..*Play in the browser/s);
+  assert.match(homeHtml, /Your game\. Your rights\..*Open to everyone/s);
+  assert.match(homeHtml, /Pause slogans/);
   assert.match(gamesHtml, /Your next favorite game/);
   assert.match(securityHtml, /Sign in to OpenGames first/);
   assert.doesNotMatch(gamesHtml, /下一款喜歡的遊戲/);

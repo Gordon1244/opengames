@@ -2,6 +2,18 @@
 
 本檔記錄 OpenGames 對外版本。版本號遵循 `MAJOR.MINOR.PATCH`：不相容變更提升 MAJOR、向下相容功能提升 MINOR、修正與文件更新提升 PATCH。
 
+## [1.1.0] - 2026-10-01
+
+### Added
+
+- 首頁新增四組繁中與英文創作者標語，包含「把你的 AI 遊戲放上來」、瀏覽器即玩與創作者權利等主題。
+- 標語提供鍵盤可操作的暫停／繼續控制，並在分頁離開前景時自動停止輪播。
+
+### Accessibility
+
+- 標語使用固定的語意標題，避免畫面輪播內容被螢幕閱讀器反覆播報。
+- 遵循 `prefers-reduced-motion` 設定；偏好減少動態效果時固定顯示第一句並隱藏播放控制。
+
 ## [1.0.2] - 2026-10-01
 
 ### Fixed
@@ -49,6 +61,7 @@
 - 平台版本自本版起從 `1.0.0` 迭代。
 - SDK 方法維持獨立的 `v1` 相容性承諾；平台 PATCH 或 MINOR 更新不會自動改變 SDK 主版本。
 
+[1.1.0]: https://github.com/Gordon1244/opengames/tree/v1.1.0
 [1.0.2]: https://github.com/Gordon1244/opengames/tree/v1.0.2
 [1.0.1]: https://github.com/Gordon1244/opengames/tree/v1.0.1
 [1.0.0]: https://github.com/Gordon1244/opengames/tree/v1.0.0

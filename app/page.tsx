@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-html-link-for-pages -- Vinext client navigation currently throws at runtime; use reliable document navigation. */
 import { SiteHeader, SiteFooter } from "../components/SiteHeader";
 import { GameVisual } from "../components/GameVisual";
+import { HeroSlogans, type HeroSlogan } from "../components/HeroSlogans";
 import { demoGames, localizeGame, sortRecommendedGames, uploadedRowToGame } from "../lib/games";
 import { copy, getLocale, numberLocale, type Locale } from "../lib/i18n";
 import { getPlaySummaries, getRatingSummaries, getUploadedGames } from "../lib/platform";
@@ -15,6 +16,19 @@ async function homepageGames(locale: Locale) {
 
 export default async function Home() {
   const locale = await getLocale();
+  const heroSlogans: HeroSlogan[] = locale === "zh-Hant"
+    ? [
+        { lead: "好遊戲，", accent: "不該被埋沒。" },
+        { lead: "把你的 AI 遊戲，", accent: "放上來。" },
+        { lead: "做完就發布，", accent: "打開就能玩。" },
+        { lead: "作品是你的，", accent: "舞台是大家的。" },
+      ]
+    : [
+        { lead: "Great games", accent: "deserve to be found." },
+        { lead: "Bring your AI game", accent: "to OpenGames." },
+        { lead: "Build. Publish.", accent: "Play in the browser." },
+        { lead: "Your game. Your rights.", accent: "Open to everyone." },
+      ];
   const rankedGames = await homepageGames(locale);
   const featured = rankedGames[0] ?? localizeGame(demoGames[0], locale);
   const recommendations = rankedGames.slice(1, 4);
@@ -26,7 +40,12 @@ export default async function Home() {
       <section className="hero" id="top">
         <div className="hero-copy">
           <p className="eyebrow"><span /> THE OPEN ARCADE</p>
-          <h1>{copy(locale, <>好遊戲，<br /><em>不該被埋沒。</em></>, <>Great games<br /><em>deserve to be found.</em></>)}</h1>
+          <HeroSlogans
+            slogans={heroSlogans}
+            accessibleLabel={heroSlogans.map(({ lead, accent }) => `${lead}${copy(locale, "", " ")}${accent}`).join(copy(locale, "；", " "))}
+            pauseLabel={copy(locale, "暫停標語", "Pause slogans")}
+            resumeLabel={copy(locale, "繼續標語", "Resume slogans")}
+          />
           <p className="hero-lead">{copy(locale, "一個由玩家與創作者共同打造的開源遊戲平台。上傳你的作品，讓全世界在瀏覽器裡直接玩。", "An open-source game platform built by players and creators. Upload your work and let anyone play it instantly in the browser.")}</p>
           <div className="hero-actions"><a className="primary-button" href="/games">{copy(locale, "開始探索", "Start exploring")} <span>↗</span></a><a className="secondary-button" href="/upload">{copy(locale, "上傳你的遊戲", "Upload your game")}</a></div>
           <div className="hero-proof" aria-label={copy(locale, "平台特色", "Platform highlights")}><div><strong>100%</strong><span>{copy(locale, "瀏覽器直接玩", "Play in browser")}</span></div><div><strong>OPEN</strong><span>{copy(locale, "MIT 開源平台", "MIT open source")}</span></div><div><strong>FAIR</strong><span>{copy(locale, "創作者保有權利", "Creators keep rights")}</span></div></div>
